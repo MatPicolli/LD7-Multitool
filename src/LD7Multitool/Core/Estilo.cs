@@ -21,8 +21,11 @@ public static class Estilo
     public static readonly Color CorSelecao = Color.FromArgb(226, 233, 255);
 
     public static readonly Font FontePadrao = new("Segoe UI", 9.75f);
-    public static readonly Font FonteTitulo = new("Segoe UI Semibold", 13f);
+    public static readonly Font FonteTitulo = new("Segoe UI Semibold", 12f);
     public static readonly Font FonteCabecalhoGrade = new("Segoe UI Semibold", 9.75f);
+
+    /// <summary>Altura única de todos os botões de barra — evita corte de texto.</summary>
+    public const int AlturaBotao = 34;
 
     /// <summary>Botão de ação principal (fundo colorido, texto branco).</summary>
     public static Button BotaoPrimario(string texto) =>
@@ -51,14 +54,15 @@ public static class Estilo
         var botao = new Button
         {
             Text = glifo,
-            Font = new Font("Segoe UI", 13f),
+            Font = new Font("Segoe UI", 12f),
             FlatStyle = FlatStyle.Flat,
             BackColor = CorSuperficie,
             ForeColor = CorTextoSuave,
-            Size = new Size(38, 34),
-            Margin = new Padding(4, 0, 4, 0),
+            Size = new Size(40, AlturaBotao),
+            Margin = new Padding(0),
             Cursor = Cursors.Hand,
             TextAlign = ContentAlignment.MiddleCenter,
+            Padding = new Padding(0),
         };
         botao.FlatAppearance.BorderSize = 1;
         botao.FlatAppearance.BorderColor = CorBorda;
@@ -73,14 +77,18 @@ public static class Estilo
             Text = texto,
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Padding = new Padding(14, 7, 14, 7),
-            Margin = new Padding(4, 0, 4, 0),
+            // Padding só horizontal: a altura é fixada por MinimumSize para o
+            // texto ficar centralizado sem risco de corte.
+            Padding = new Padding(14, 0, 14, 0),
+            MinimumSize = new Size(0, AlturaBotao),
+            Margin = new Padding(0, 0, 8, 0),
             FlatStyle = FlatStyle.Flat,
             BackColor = fundo,
             ForeColor = textoCor,
             Font = FontePadrao,
             Cursor = Cursors.Hand,
             UseVisualStyleBackColor = false,
+            TextAlign = ContentAlignment.MiddleCenter,
         };
         botao.FlatAppearance.BorderSize = 0;
         botao.FlatAppearance.MouseOverBackColor = hover;
@@ -93,7 +101,7 @@ public static class Estilo
         var barra = new Panel
         {
             Dock = DockStyle.Top,
-            Height = 56,
+            Height = AlturaBotao + 20,
             BackColor = CorSuperficie,
             Padding = new Padding(12, 10, 12, 10),
         };

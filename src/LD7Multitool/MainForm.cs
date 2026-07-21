@@ -43,12 +43,12 @@ public class MainForm : Form
 
         var titulo = new Label
         {
-            Text = "🧰  LD7 Multitool",
+            Text = "LD7 Multitool",
             ForeColor = Color.White,
             Font = Estilo.FonteTitulo,
             AutoSize = false,
-            Width = 186,
-            Height = 56,
+            Width = 190,
+            Height = 52,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(6, 0, 0, 0),
             Margin = new Padding(0, 4, 0, 16),

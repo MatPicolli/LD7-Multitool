@@ -48,7 +48,7 @@ public class AutoEmailControl : UserControl
         fluxoAcoes.Controls.Add(botaoEditar);
         fluxoAcoes.Controls.Add(botaoExcluir);
 
-        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 46, Padding = new Padding(4, 0, 4, 0) };
+        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0) };
         botaoConfigSmtp.Dock = DockStyle.Fill;
         painelEngrenagem.Controls.Add(botaoConfigSmtp);
 

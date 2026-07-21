@@ -79,8 +79,10 @@ public class BoletoForm : Form
         };
         var botaoEscolherArquivo = Estilo.BotaoPadrao("...");
         botaoEscolherArquivo.AutoSize = false;
-        botaoEscolherArquivo.Size = new Size(36, 27);
+        botaoEscolherArquivo.MinimumSize = Size.Empty;
+        botaoEscolherArquivo.Size = new Size(36, 29);
         botaoEscolherArquivo.Margin = new Padding(4, 0, 0, 0);
+        botaoEscolherArquivo.Padding = new Padding(0);
         botaoEscolherArquivo.Click += (_, _) => EscolherArquivo();
 
         var painelArquivo = new TableLayoutPanel

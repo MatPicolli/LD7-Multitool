@@ -26,19 +26,15 @@ public class BoletosControl : UserControl
         var botaoNovo = Estilo.BotaoPrimario("+ Novo");
         var botaoImportar = Estilo.BotaoPrimario("Importar boletos");
         var botaoEditar = Estilo.BotaoPadrao("Editar");
-        var botaoExcluir = Estilo.BotaoPerigo("Excluir");
-        var botaoMarcarPago = Estilo.BotaoPadrao("Marcar como pago");
-        var botaoCancelarBoleto = Estilo.BotaoPadrao("Cancelar boleto");
         var botaoAbrirPdf = Estilo.BotaoPadrao("Abrir PDF");
+        var botaoExcluir = Estilo.BotaoPerigo("Excluir");
         var botaoConfiguracoes = Estilo.BotaoIcone("⚙", "Configurações (pasta dos PDFs)");
 
         botaoNovo.Click += (_, _) => Novo();
         botaoImportar.Click += (_, _) => Importar();
         botaoEditar.Click += (_, _) => Editar();
-        botaoExcluir.Click += (_, _) => Excluir();
-        botaoMarcarPago.Click += (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Pago);
-        botaoCancelarBoleto.Click += (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Cancelado);
         botaoAbrirPdf.Click += (_, _) => AbrirPdf();
+        botaoExcluir.Click += (_, _) => Excluir();
         botaoConfiguracoes.Click += (_, _) => AbrirConfiguracoes();
 
         _filtroEstado = new ComboBox
@@ -46,7 +42,7 @@ public class BoletosControl : UserControl
             DropDownStyle = ComboBoxStyle.DropDownList,
             Width = 120,
             FlatStyle = FlatStyle.Flat,
-            Margin = new Padding(8, 5, 4, 0),
+            Margin = new Padding(6, 4, 0, 0),
         };
         _filtroEstado.Items.Add("Todos");
         foreach (EstadoBoleto estado in Enum.GetValues<EstadoBoleto>())
@@ -64,20 +60,18 @@ public class BoletosControl : UserControl
         fluxoAcoes.Controls.Add(botaoNovo);
         fluxoAcoes.Controls.Add(botaoImportar);
         fluxoAcoes.Controls.Add(botaoEditar);
-        fluxoAcoes.Controls.Add(botaoExcluir);
-        fluxoAcoes.Controls.Add(botaoMarcarPago);
-        fluxoAcoes.Controls.Add(botaoCancelarBoleto);
         fluxoAcoes.Controls.Add(botaoAbrirPdf);
+        fluxoAcoes.Controls.Add(botaoExcluir);
         fluxoAcoes.Controls.Add(new Label
         {
             Text = "Estado:",
             AutoSize = true,
             ForeColor = Estilo.CorTextoSuave,
-            Margin = new Padding(16, 9, 0, 0),
+            Margin = new Padding(12, 8, 0, 0),
         });
         fluxoAcoes.Controls.Add(_filtroEstado);
 
-        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 46, Padding = new Padding(4, 0, 4, 0) };
+        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0) };
         botaoConfiguracoes.Dock = DockStyle.Fill;
         painelEngrenagem.Controls.Add(botaoConfiguracoes);
 
@@ -112,6 +106,23 @@ public class BoletosControl : UserControl
         _grade.CellDoubleClick += (_, e) =>
         {
             if (e.RowIndex >= 0) Editar();
+        };
+
+        // Ações de estado ficam no menu de contexto para não lotar a barra.
+        var menuContexto = new ContextMenuStrip();
+        menuContexto.Items.Add("Editar", null, (_, _) => Editar());
+        menuContexto.Items.Add("Marcar como pago", null, (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Pago));
+        menuContexto.Items.Add("Cancelar boleto", null, (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Cancelado));
+        menuContexto.Items.Add("Reabrir boleto", null, (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Aberto));
+        menuContexto.Items.Add(new ToolStripSeparator());
+        menuContexto.Items.Add("Abrir PDF", null, (_, _) => AbrirPdf());
+        menuContexto.Items.Add("Excluir", null, (_, _) => Excluir());
+        _grade.ContextMenuStrip = menuContexto;
+        _grade.CellMouseDown += (_, e) =>
+        {
+            // Clique-direito seleciona a linha antes de abrir o menu.
+            if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
+                _grade.Rows[e.RowIndex].Selected = true;
         };
 
         _resumo = new Label
@@ -166,7 +177,8 @@ public class BoletosControl : UserControl
         var totalAberto = _boletos
             .Where(b => b.Estado == EstadoBoleto.Aberto)
             .Sum(b => b.Valor);
-        _resumo.Text = $"{_boletos.Count} boleto(s) — total em aberto: {totalAberto.ToString("C2", CulturaBr)}";
+        _resumo.Text = $"{_boletos.Count} boleto(s) — total em aberto: {totalAberto.ToString("C2", CulturaBr)}" +
+            "   |   Clique-direito num boleto para mais ações";
     }
 
     private void Novo()

@@ -253,7 +253,8 @@ public class BoletosControl : UserControl
 
         MessageBox.Show(this,
             $"{formulario.BoletosImportados.Count} boleto(s) importado(s).\n" +
-            "Dê dois cliques em cada um para completar valor, validade e demais dados.",
+            "Os dados foram lidos automaticamente dos PDFs — confira e, se " +
+            "algum campo ficou em branco, complete com dois cliques no boleto.",
             "Importação concluída",
             MessageBoxButtons.OK, MessageBoxIcon.Information);
     }

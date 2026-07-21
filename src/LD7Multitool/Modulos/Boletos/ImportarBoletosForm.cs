@@ -1,15 +1,19 @@
+using System.Globalization;
 using LD7Multitool.Core;
 
 namespace LD7Multitool.Modulos.Boletos;
 
 /// <summary>
-/// Lista os PDFs da pasta configurada que ainda não foram importados
+/// Lista os PDFs da pasta configurada que ainda não foram importados,
+/// já mostrando os dados extraídos de cada um (pagador, valor, vencimento),
 /// e cria um boleto para cada arquivo selecionado.
 /// </summary>
 public class ImportarBoletosForm : Form
 {
+    private static readonly CultureInfo CulturaBr = CultureInfo.GetCultureInfo("pt-BR");
+
     private readonly CheckedListBox _listaArquivos;
-    private readonly List<string> _caminhos = new();
+    private readonly List<Boleto> _candidatos = new();
 
     /// <summary>Boletos criados a partir dos arquivos selecionados.</summary>
     public List<Boleto> BoletosImportados { get; } = new();
@@ -20,8 +24,8 @@ public class ImportarBoletosForm : Form
         Font = Estilo.FontePadrao;
         BackColor = Estilo.CorSuperficie;
         StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(560, 420);
-        ClientSize = new Size(560, 420);
+        MinimumSize = new Size(720, 440);
+        ClientSize = new Size(720, 440);
 
         var jaImportados = BoletoRepository.ListarCaminhosImportados();
         var novos = Directory.EnumerateFiles(pasta, "*.pdf", SearchOption.TopDirectoryOnly)
@@ -36,7 +40,7 @@ public class ImportarBoletosForm : Form
             Padding = new Padding(12, 10, 12, 0),
             Text = novos.Count == 0
                 ? "Nenhum PDF novo encontrado na pasta configurada."
-                : $"{novos.Count} PDF(s) novo(s) encontrado(s). Selecione quais importar:",
+                : $"{novos.Count} PDF(s) novo(s) encontrado(s). Os dados abaixo foram lidos de cada arquivo:",
         };
 
         _listaArquivos = new CheckedListBox
@@ -45,11 +49,23 @@ public class ImportarBoletosForm : Form
             CheckOnClick = true,
             BorderStyle = BorderStyle.FixedSingle,
             IntegralHeight = false,
+            HorizontalScrollbar = true,
         };
-        foreach (var caminho in novos)
+
+        // A leitura dos PDFs acontece aqui, na abertura do diálogo.
+        Cursor.Current = Cursors.WaitCursor;
+        try
         {
-            _caminhos.Add(caminho);
-            _listaArquivos.Items.Add(Path.GetFileName(caminho), isChecked: true);
+            foreach (var caminho in novos)
+            {
+                var boleto = LeitorBoletoPdf.Ler(caminho);
+                _candidatos.Add(boleto);
+                _listaArquivos.Items.Add(DescreverCandidato(boleto), isChecked: true);
+            }
+        }
+        finally
+        {
+            Cursor.Current = Cursors.Default;
         }
 
         var painelLista = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12, 4, 12, 4) };
@@ -77,21 +93,21 @@ public class ImportarBoletosForm : Form
         CancelButton = botaoCancelar;
     }
 
+    private static string DescreverCandidato(Boleto boleto)
+    {
+        var arquivo = Path.GetFileName(boleto.CaminhoArquivo);
+        var valor = boleto.Valor > 0
+            ? boleto.Valor.ToString("C2", CulturaBr)
+            : "valor não lido";
+        return $"{boleto.Nome}  —  {valor}, venc. {boleto.Validade:dd/MM/yyyy}  ({arquivo})";
+    }
+
     private void Importar()
     {
-        for (var i = 0; i < _caminhos.Count; i++)
+        for (var i = 0; i < _candidatos.Count; i++)
         {
-            if (!_listaArquivos.GetItemChecked(i))
-                continue;
-
-            BoletosImportados.Add(new Boleto
-            {
-                Nome = Path.GetFileNameWithoutExtension(_caminhos[i]),
-                Valor = 0m,
-                Validade = DateTime.Today,
-                Estado = EstadoBoleto.Aberto,
-                CaminhoArquivo = _caminhos[i],
-            });
+            if (_listaArquivos.GetItemChecked(i))
+                BoletosImportados.Add(_candidatos[i]);
         }
 
         if (BoletosImportados.Count == 0)

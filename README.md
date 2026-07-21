@@ -35,7 +35,14 @@ destaque de boletos vencidos (vermelho) e total em aberto no rodapé.
 
 **Importação de PDFs:** configure a pasta onde ficam os PDFs dos boletos no
 botão de engrenagem (⚙) e use **Importar boletos** — cada PDF novo da pasta
-vira um boleto (com o arquivo vinculado), bastando completar valor e validade.
+vira um boleto com o arquivo vinculado e os dados **extraídos automaticamente**:
+
+- **Valor** e **vencimento** são lidos da linha digitável (padrão FEBRABAN,
+  funciona com boleto de qualquer banco);
+- **Nome do pagador**, **nosso número** e **NF-e referente** (nº do documento)
+  são lidos por heurísticas do layout do boleto — se algum não for encontrado,
+  o campo fica em branco para completar manualmente.
+
 O botão **Abrir PDF** abre o arquivo vinculado ao boleto selecionado.
 
 ## Requisitos

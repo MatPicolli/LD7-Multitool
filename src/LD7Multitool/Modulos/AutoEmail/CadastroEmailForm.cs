@@ -51,8 +51,8 @@ public class CadastroEmailForm : Form
 
         _campoNovoDestinatario = new TextBox
         {
-            Width = 240,
-            Margin = new Padding(0, 3, 4, 0),
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 6, 4, 0),
             PlaceholderText = "novo@email.com",
         };
         var botaoAdicionar = Estilo.BotaoPadrao("Adicionar");
@@ -79,10 +79,21 @@ public class CadastroEmailForm : Form
         painelEmails.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         painelEmails.Controls.Add(_listaDestinatarios, 0, 0);
 
-        var barraEmails = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0) };
-        barraEmails.Controls.Add(_campoNovoDestinatario);
-        barraEmails.Controls.Add(botaoAdicionar);
-        barraEmails.Controls.Add(botaoRemover);
+        // Tabela em vez de FlowLayoutPanel: garante tudo numa linha só
+        // (o fluxo quebrava os botões para uma segunda linha cortada).
+        var barraEmails = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 3,
+            RowCount = 1,
+            Margin = new Padding(0),
+        };
+        barraEmails.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        barraEmails.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        barraEmails.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        barraEmails.Controls.Add(_campoNovoDestinatario, 0, 0);
+        barraEmails.Controls.Add(botaoAdicionar, 1, 0);
+        barraEmails.Controls.Add(botaoRemover, 2, 0);
         painelEmails.Controls.Add(barraEmails, 0, 1);
 
         AdicionarLinha(tabela, 2, "E-mail(s):", painelEmails);

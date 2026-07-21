@@ -32,22 +32,15 @@ public static class Database
             );
 
             CREATE TABLE IF NOT EXISTS cadastros_email (
-                id      INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome    TEXT NOT NULL,
-                assunto TEXT NOT NULL DEFAULT '',
-                corpo   TEXT NOT NULL DEFAULT ''
+                id     INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo TEXT NOT NULL DEFAULT '',
+                nome   TEXT NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS cadastro_email_destinatarios (
                 id         INTEGER PRIMARY KEY AUTOINCREMENT,
                 cadastro_id INTEGER NOT NULL REFERENCES cadastros_email(id) ON DELETE CASCADE,
                 email      TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS cadastro_email_arquivos (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                cadastro_id INTEGER NOT NULL REFERENCES cadastros_email(id) ON DELETE CASCADE,
-                caminho     TEXT NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS boletos (
@@ -63,20 +56,35 @@ public static class Database
             """;
         comando.ExecuteNonQuery();
 
-        // Migração: bancos criados antes da coluna caminho_arquivo.
-        using var verificar = conexao.CreateCommand();
-        verificar.CommandText =
-            "SELECT COUNT(*) FROM pragma_table_info('boletos') WHERE name = 'caminho_arquivo'";
-        if ((long)verificar.ExecuteScalar()! == 0)
+        // Migrações de bancos criados por versões anteriores.
+        AdicionarColunaSeFaltar(conexao, "boletos", "caminho_arquivo",
+            "ALTER TABLE boletos ADD COLUMN caminho_arquivo TEXT NOT NULL DEFAULT ''");
+        AdicionarColunaSeFaltar(conexao, "cadastros_email", "codigo",
+            "ALTER TABLE cadastros_email ADD COLUMN codigo TEXT NOT NULL DEFAULT ''");
+
+        // Os anexos por cadastro foram substituídos pelas pastas de NF-e e
+        // boletos resolvidas na hora do envio — a tabela antiga é descartada.
+        using (var limpar = conexao.CreateCommand())
         {
-            using var alterar = conexao.CreateCommand();
-            alterar.CommandText =
-                "ALTER TABLE boletos ADD COLUMN caminho_arquivo TEXT NOT NULL DEFAULT ''";
-            alterar.ExecuteNonQuery();
+            limpar.CommandText = "DROP TABLE IF EXISTS cadastro_email_arquivos";
+            limpar.ExecuteNonQuery();
         }
 
         // Chaves estrangeiras precisam ser habilitadas por conexão no SQLite;
         // como usamos ON DELETE CASCADE, os repositórios cuidam disso ao abrir.
+    }
+
+    private static void AdicionarColunaSeFaltar(
+        SqliteConnection conexao, string tabela, string coluna, string comandoAlter)
+    {
+        using var verificar = conexao.CreateCommand();
+        verificar.CommandText =
+            $"SELECT COUNT(*) FROM pragma_table_info('{tabela}') WHERE name = '{coluna}'";
+        if ((long)verificar.ExecuteScalar()! != 0)
+            return;
+        using var alterar = conexao.CreateCommand();
+        alterar.CommandText = comandoAlter;
+        alterar.ExecuteNonQuery();
     }
 
     /// <summary>Abre uma conexão com suporte a chaves estrangeiras (ON DELETE CASCADE).</summary>

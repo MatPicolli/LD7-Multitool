@@ -1,17 +1,20 @@
+using System.Globalization;
+using System.Text;
 using LD7Multitool.Core;
 
 namespace LD7Multitool.Modulos.AutoEmail;
 
 /// <summary>
-/// Tela principal do Auto-Email: lista de cadastros à esquerda,
-/// detalhes do cadastro selecionado à direita e ações na barra superior.
+/// Tela principal do Auto-Email: pesquisa (por nome ou código) e lista de
+/// clientes à esquerda, detalhes à direita e ações na barra superior.
 /// </summary>
 public class AutoEmailControl : UserControl
 {
+    private readonly TextBox _campoPesquisa;
     private readonly ListBox _listaCadastros;
     private readonly TextBox _detalhes;
-    private readonly Button _botaoEnviar;
-    private List<CadastroEmail> _cadastros = new();
+    private List<CadastroEmail> _todos = new();
+    private List<CadastroEmail> _filtrados = new();
 
     public AutoEmailControl()
     {
@@ -19,22 +22,24 @@ public class AutoEmailControl : UserControl
         Font = Estilo.FontePadrao;
         BackColor = Estilo.CorFundo;
 
+        // --- Barra superior ------------------------------------------------
         var barraSuperior = Estilo.CriarBarraSuperior();
 
         var botaoNovo = Estilo.BotaoPrimario("+ Novo");
-        _botaoEnviar = Estilo.BotaoPrimario("Enviar e-mail");
+        var botaoEnviar = Estilo.BotaoPrimario("Enviar e-mail");
         var botaoEditar = Estilo.BotaoPadrao("Editar");
         var botaoExcluir = Estilo.BotaoPerigo("Excluir");
-        var botaoConfigSmtp = Estilo.BotaoIcone("⚙", "Configurar servidor SMTP");
+        var botaoConfig = Estilo.BotaoIcone("⚙", "Configurações (SMTP e pastas)");
 
         botaoNovo.Click += (_, _) => Novo();
+        botaoEnviar.Click += (_, _) => Enviar();
         botaoEditar.Click += (_, _) => Editar();
         botaoExcluir.Click += (_, _) => Excluir();
-        _botaoEnviar.Click += async (_, _) => await EnviarAsync();
-        botaoConfigSmtp.Click += (_, _) =>
+        botaoConfig.Click += (_, _) =>
         {
-            using var formulario = new ConfigSmtpForm();
-            formulario.ShowDialog(this);
+            using var formulario = new AutoEmailConfigForm();
+            if (formulario.ShowDialog(this) == DialogResult.OK)
+                MostrarDetalhes(); // pastas podem ter mudado
         };
 
         var fluxoAcoes = new FlowLayoutPanel
@@ -44,24 +49,31 @@ public class AutoEmailControl : UserControl
             Padding = new Padding(0),
         };
         fluxoAcoes.Controls.Add(botaoNovo);
-        fluxoAcoes.Controls.Add(_botaoEnviar);
+        fluxoAcoes.Controls.Add(botaoEnviar);
         fluxoAcoes.Controls.Add(botaoEditar);
         fluxoAcoes.Controls.Add(botaoExcluir);
 
-        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0) };
-        botaoConfigSmtp.Dock = DockStyle.Fill;
-        painelEngrenagem.Controls.Add(botaoConfigSmtp);
+        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0, 2, 0, 2) };
+        botaoConfig.Dock = DockStyle.Fill;
+        painelEngrenagem.Controls.Add(botaoConfig);
 
         barraSuperior.Controls.Add(fluxoAcoes);
         barraSuperior.Controls.Add(painelEngrenagem);
 
+        // --- Painéis -------------------------------------------------------
         var divisao = new SplitContainer
         {
             Dock = DockStyle.Fill,
             FixedPanel = FixedPanel.Panel1,
         };
-        // SplitterDistance só pode ser definido depois que o controle tem tamanho real.
-        Load += (_, _) => divisao.SplitterDistance = 240;
+        Load += (_, _) => divisao.SplitterDistance = 300;
+
+        _campoPesquisa = new TextBox
+        {
+            Dock = DockStyle.Top,
+            PlaceholderText = "Pesquisar por nome ou código...",
+        };
+        _campoPesquisa.TextChanged += (_, _) => AplicarFiltro();
 
         _listaCadastros = new ListBox
         {
@@ -73,7 +85,11 @@ public class AutoEmailControl : UserControl
         };
         _listaCadastros.SelectedIndexChanged += (_, _) => MostrarDetalhes();
         _listaCadastros.DoubleClick += (_, _) => Editar();
+
+        divisao.Panel1.Padding = new Padding(8);
+        divisao.Panel1.BackColor = Estilo.CorSuperficie;
         divisao.Panel1.Controls.Add(_listaCadastros);
+        divisao.Panel1.Controls.Add(_campoPesquisa);
 
         _detalhes = new TextBox
         {
@@ -84,68 +100,122 @@ public class AutoEmailControl : UserControl
             BorderStyle = BorderStyle.None,
             BackColor = Estilo.CorSuperficie,
         };
-        divisao.Panel1.Padding = new Padding(8);
         divisao.Panel2.Padding = new Padding(12);
-        divisao.Panel1.BackColor = Estilo.CorSuperficie;
         divisao.Panel2.BackColor = Estilo.CorSuperficie;
         divisao.Panel2.Controls.Add(_detalhes);
 
         Controls.Add(divisao);
         Controls.Add(barraSuperior);
 
-        Recarregar();
+        RecarregarDoBanco();
     }
 
     private CadastroEmail? CadastroSelecionado =>
-        _listaCadastros.SelectedIndex < 0 ? null : _cadastros[_listaCadastros.SelectedIndex];
+        _listaCadastros.SelectedIndex < 0 ? null : _filtrados[_listaCadastros.SelectedIndex];
 
-    private void Recarregar(long? selecionarId = null)
+    private void RecarregarDoBanco(long? selecionarId = null)
     {
-        _cadastros = CadastroEmailRepository.Listar();
+        _todos = CadastroEmailRepository.Listar();
+        AplicarFiltro(selecionarId);
+    }
+
+    /// <summary>
+    /// Filtro "fuzzy": aceita busca exata por código, prefixo, trecho no
+    /// meio do nome e até letras fora de sequência (ex.: "kest" acha
+    /// "KEISLI ART ESTOFADOS"), ignorando acentos e maiúsculas.
+    /// </summary>
+    private void AplicarFiltro(long? selecionarId = null)
+    {
+        var termo = Normalizar(_campoPesquisa.Text.Trim());
+
+        _filtrados = termo.Length == 0
+            ? _todos.ToList()
+            : _todos
+                .Select(c => (Cadastro: c, Pontos: Pontuar(c, termo)))
+                .Where(x => x.Pontos >= 0)
+                .OrderBy(x => x.Pontos)
+                .ThenBy(x => x.Cadastro.Nome)
+                .Select(x => x.Cadastro)
+                .ToList();
 
         _listaCadastros.Items.Clear();
-        foreach (var cadastro in _cadastros)
-            _listaCadastros.Items.Add(cadastro.Nome);
+        foreach (var cadastro in _filtrados)
+            _listaCadastros.Items.Add($"{cadastro.Codigo} — {cadastro.Nome}");
 
-        if (_cadastros.Count > 0)
+        if (_filtrados.Count > 0)
         {
             var indice = selecionarId is null
                 ? 0
-                : Math.Max(0, _cadastros.FindIndex(c => c.Id == selecionarId));
+                : Math.Max(0, _filtrados.FindIndex(c => c.Id == selecionarId));
             _listaCadastros.SelectedIndex = indice;
         }
 
         MostrarDetalhes();
     }
 
+    private static int Pontuar(CadastroEmail cadastro, string termo)
+    {
+        var codigo = Normalizar(cadastro.Codigo);
+        var nome = Normalizar(cadastro.Nome);
+
+        if (codigo == termo) return 0;
+        if (codigo.StartsWith(termo)) return 1;
+        if (nome.StartsWith(termo)) return 2;
+        if (nome.Contains(termo) || codigo.Contains(termo)) return 3;
+        if (EhSubsequencia(termo, nome)) return 4;
+        return -1;
+    }
+
+    /// <summary>Todas as letras do termo aparecem no alvo, na mesma ordem.</summary>
+    private static bool EhSubsequencia(string termo, string alvo)
+    {
+        var i = 0;
+        foreach (var caractere in alvo)
+        {
+            if (i < termo.Length && caractere == termo[i])
+                i++;
+        }
+        return i == termo.Length;
+    }
+
+    /// <summary>Minúsculas e sem acentos, para comparação tolerante.</summary>
+    private static string Normalizar(string texto)
+    {
+        var decomposto = texto.Normalize(NormalizationForm.FormD);
+        var construtor = new StringBuilder(decomposto.Length);
+        foreach (var caractere in decomposto)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(caractere) != UnicodeCategory.NonSpacingMark)
+                construtor.Append(char.ToLowerInvariant(caractere));
+        }
+        return construtor.ToString();
+    }
+
     private void MostrarDetalhes()
     {
         if (CadastroSelecionado is not { } cadastro)
         {
-            _detalhes.Text = "Nenhum cadastro selecionado." + Environment.NewLine +
-                "Use o botão \"Novo\" para criar um cadastro de envio.";
+            _detalhes.Text = "Nenhum cliente selecionado." + Environment.NewLine +
+                "Use o botão \"+ Novo\" para cadastrar um cliente.";
             return;
         }
 
+        var config = ConfigSmtp.Carregar();
+        var nfe = LocalizadorArquivos.UltimoPdfDoCliente(config.PastaNfe, cadastro.Codigo);
+        var boleto = LocalizadorArquivos.UltimoPdfDoCliente(config.PastaBoletos, cadastro.Codigo);
+
         var linhas = new List<string>
         {
-            $"Cadastro: {cadastro.Nome}",
+            $"Código: {cadastro.Codigo}",
+            $"Nome: {cadastro.Nome}",
             "",
-            $"Assunto: {cadastro.Assunto}",
-            "",
-            "Destinatários:",
+            "E-mail(s):",
         };
         linhas.AddRange(cadastro.Destinatarios.Select(d => $"  • {d}"));
         linhas.Add("");
-        linhas.Add("Arquivos anexados:");
-        if (cadastro.Arquivos.Count == 0)
-            linhas.Add("  (nenhum)");
-        else
-            linhas.AddRange(cadastro.Arquivos.Select(a =>
-                $"  • {a}{(File.Exists(a) ? "" : "  [NÃO ENCONTRADO]")}"));
-        linhas.Add("");
-        linhas.Add("Mensagem:");
-        linhas.Add(cadastro.Corpo);
+        linhas.Add($"Arquivos mais recentes com \"Cliente-{cadastro.Codigo}\":");
+        linhas.Add($"  NF-e:   {(nfe is null ? "(nenhum encontrado)" : Path.GetFileName(nfe))}");
+        linhas.Add($"  Boleto: {(boleto is null ? "(nenhum encontrado)" : Path.GetFileName(boleto))}");
 
         _detalhes.Text = string.Join(Environment.NewLine, linhas);
     }
@@ -156,7 +226,7 @@ public class AutoEmailControl : UserControl
         if (formulario.ShowDialog(this) != DialogResult.OK)
             return;
         CadastroEmailRepository.Salvar(formulario.Cadastro);
-        Recarregar(formulario.Cadastro.Id);
+        RecarregarDoBanco(formulario.Cadastro.Id);
     }
 
     private void Editar()
@@ -167,7 +237,7 @@ public class AutoEmailControl : UserControl
         if (formulario.ShowDialog(this) != DialogResult.OK)
             return;
         CadastroEmailRepository.Salvar(formulario.Cadastro);
-        Recarregar(formulario.Cadastro.Id);
+        RecarregarDoBanco(formulario.Cadastro.Id);
     }
 
     private void Excluir()
@@ -175,46 +245,25 @@ public class AutoEmailControl : UserControl
         if (CadastroSelecionado is not { } cadastro)
             return;
         var resposta = MessageBox.Show(this,
-            $"Excluir o cadastro \"{cadastro.Nome}\"?",
+            $"Excluir o cliente \"{cadastro.Nome}\"?",
             "Confirmar exclusão",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
         if (resposta != DialogResult.Yes)
             return;
         CadastroEmailRepository.Excluir(cadastro.Id);
-        Recarregar();
+        RecarregarDoBanco();
     }
 
-    private async Task EnviarAsync()
+    private void Enviar()
     {
         if (CadastroSelecionado is not { } cadastro)
-            return;
-
-        var resposta = MessageBox.Show(this,
-            $"Enviar \"{cadastro.Nome}\" para {cadastro.Destinatarios.Count} destinatário(s)?",
-            "Confirmar envio",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Question);
-        if (resposta != DialogResult.Yes)
-            return;
-
-        _botaoEnviar.Enabled = false;
-        UseWaitCursor = true;
-        try
         {
-            await EnvioEmailService.EnviarAsync(ConfigSmtp.Carregar(), cadastro);
-            MessageBox.Show(this, "E-mail enviado com sucesso!", "Envio concluído",
+            MessageBox.Show(this, "Selecione um cliente para enviar.", "Nenhum cliente",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
         }
-        catch (Exception ex)
-        {
-            MessageBox.Show(this, "Falha ao enviar o e-mail:\n\n" + ex.Message, "Erro no envio",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        finally
-        {
-            _botaoEnviar.Enabled = true;
-            UseWaitCursor = false;
-        }
+        using var formulario = new EnviarEmailForm(cadastro);
+        formulario.ShowDialog(this);
     }
 }

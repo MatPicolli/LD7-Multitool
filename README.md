@@ -9,14 +9,23 @@ Interface totalmente em **português**. Dados gravados em banco **SQLite** local
 ## Módulos atuais
 
 ### 📧 Auto-Email
-Cadastros de envio de e-mail, cada um com:
-- **Vários destinatários** (não apenas um por cadastro)
-- **Arquivos anexados** (caminhos salvos; anexados na hora do envio)
-- Assunto e corpo da mensagem
+Cadastro de clientes com **código** (ex.: 5551), **nome** e **um ou mais
+e-mails**. Na hora de enviar:
 
-O envio usa um servidor **SMTP configurável** (botão *Configurar SMTP*). A senha
-do SMTP é protegida com DPAPI (vinculada ao usuário do Windows) — nunca fica em
-texto puro no banco.
+1. Pesquise o cliente por nome ou código (busca tolerante/fuzzy — aceita
+   trechos e letras fora de sequência, sem acentos);
+2. Escolha o que mandar:
+   - **NF-e** — anexa o PDF mais recente da pasta de Notas Fiscais cujo nome
+     contém `Cliente-{código}` (formato `DANFE Cliente-0000 (dd-mm-aaaa).pdf`);
+   - **NF-e e Boleto** — idem, pegando também o boleto mais recente da pasta
+     de Boletos (`BOLETO Cliente-0000 (dd-mm-aaaa).pdf`);
+   - **Outro** — você escolhe os arquivos manualmente;
+3. Confira anexos, assunto e mensagem, e clique em Enviar.
+
+Nas configurações (⚙) ficam o servidor **SMTP** (com botão **Testar conexão**,
+que envia um e-mail de teste para o próprio remetente) e as duas **pastas de
+arquivos** (Notas Fiscais e Boletos). A senha do SMTP é protegida com DPAPI
+(vinculada ao usuário do Windows) — nunca fica em texto puro no banco.
 
 > Dica: para Gmail, use uma [senha de app](https://support.google.com/accounts/answer/185833)
 > com servidor `smtp.gmail.com`, porta `587` e SSL/TLS habilitado.

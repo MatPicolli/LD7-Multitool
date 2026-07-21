@@ -71,7 +71,7 @@ public class BoletosControl : UserControl
         });
         fluxoAcoes.Controls.Add(_filtroEstado);
 
-        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0) };
+        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0, 2, 0, 2) };
         botaoConfiguracoes.Dock = DockStyle.Fill;
         painelEngrenagem.Controls.Add(botaoConfiguracoes);
 

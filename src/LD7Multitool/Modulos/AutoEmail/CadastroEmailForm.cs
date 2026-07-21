@@ -3,15 +3,13 @@ using LD7Multitool.Core;
 
 namespace LD7Multitool.Modulos.AutoEmail;
 
-/// <summary>Formulário de criação/edição de um cadastro de envio.</summary>
+/// <summary>Formulário de criação/edição de um cliente do Auto-Email.</summary>
 public class CadastroEmailForm : Form
 {
+    private readonly TextBox _campoCodigo;
     private readonly TextBox _campoNome;
-    private readonly TextBox _campoAssunto;
-    private readonly TextBox _campoCorpo;
     private readonly ListBox _listaDestinatarios;
     private readonly TextBox _campoNovoDestinatario;
-    private readonly ListBox _listaArquivos;
 
     public CadastroEmail Cadastro { get; }
 
@@ -19,53 +17,48 @@ public class CadastroEmailForm : Form
     {
         Cadastro = cadastro ?? new CadastroEmail();
 
-        Text = cadastro is null ? "Novo cadastro de e-mail" : "Editar cadastro de e-mail";
+        Text = cadastro is null ? "Novo cliente" : "Editar cliente";
         Font = Estilo.FontePadrao;
         BackColor = Estilo.CorSuperficie;
         StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(640, 560);
-        ClientSize = new Size(640, 560);
+        MinimumSize = new Size(520, 420);
+        ClientSize = new Size(520, 420);
 
         var tabela = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 6,
-            Padding = new Padding(12),
+            RowCount = 4,
+            Padding = new Padding(16),
         };
-        tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+        tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
         tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));   // nome
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));   // assunto
-        tabela.RowStyles.Add(new RowStyle(SizeType.Percent, 30));    // corpo
-        tabela.RowStyles.Add(new RowStyle(SizeType.Percent, 35));    // destinatários
-        tabela.RowStyles.Add(new RowStyle(SizeType.Percent, 35));    // arquivos
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));   // botões
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));   // código
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));   // nome
+        tabela.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // e-mails
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));   // botões
 
+        _campoCodigo = new TextBox { Dock = DockStyle.Fill, Text = Cadastro.Codigo };
         _campoNome = new TextBox { Dock = DockStyle.Fill, Text = Cadastro.Nome };
-        _campoAssunto = new TextBox { Dock = DockStyle.Fill, Text = Cadastro.Assunto };
-        _campoCorpo = new TextBox
-        {
-            Dock = DockStyle.Fill,
-            Multiline = true,
-            ScrollBars = ScrollBars.Vertical,
-            Text = Cadastro.Corpo,
-        };
 
-        AdicionarLinha(tabela, 0, "Nome:", _campoNome);
-        AdicionarLinha(tabela, 1, "Assunto:", _campoAssunto);
-        AdicionarLinha(tabela, 2, "Mensagem:", _campoCorpo);
+        AdicionarLinha(tabela, 0, "Código:", _campoCodigo);
+        AdicionarLinha(tabela, 1, "Nome:", _campoNome);
 
-        // --- Destinatários ---------------------------------------------------
+        // --- E-mails -------------------------------------------------------
         _listaDestinatarios = new ListBox { Dock = DockStyle.Fill };
         foreach (var destinatario in Cadastro.Destinatarios)
             _listaDestinatarios.Items.Add(destinatario);
 
-        _campoNovoDestinatario = new TextBox { Width = 220, Margin = new Padding(0, 3, 4, 0) };
-        var botaoAdicionarDestinatario = Estilo.BotaoPadrao("Adicionar");
-        var botaoRemoverDestinatario = Estilo.BotaoPadrao("Remover");
-        botaoAdicionarDestinatario.Click += (_, _) => AdicionarDestinatario();
-        botaoRemoverDestinatario.Click += (_, _) => RemoverSelecionado(_listaDestinatarios);
+        _campoNovoDestinatario = new TextBox
+        {
+            Width = 240,
+            Margin = new Padding(0, 3, 4, 0),
+            PlaceholderText = "novo@email.com",
+        };
+        var botaoAdicionar = Estilo.BotaoPadrao("Adicionar");
+        var botaoRemover = Estilo.BotaoPadrao("Remover");
+        botaoAdicionar.Click += (_, _) => AdicionarDestinatario();
+        botaoRemover.Click += (_, _) => RemoverDestinatario();
         _campoNovoDestinatario.KeyDown += (_, e) =>
         {
             if (e.KeyCode == Keys.Enter)
@@ -75,29 +68,26 @@ public class CadastroEmailForm : Form
             }
         };
 
-        var painelDestinatarios = CriarPainelLista(_listaDestinatarios,
-            _campoNovoDestinatario, botaoAdicionarDestinatario, botaoRemoverDestinatario);
-        AdicionarLinha(tabela, 3, "Destinatários:", painelDestinatarios);
-
-        // --- Arquivos --------------------------------------------------------
-        _listaArquivos = new ListBox
+        var painelEmails = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            HorizontalScrollbar = true,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = new Padding(0),
         };
-        foreach (var arquivo in Cadastro.Arquivos)
-            _listaArquivos.Items.Add(arquivo);
+        painelEmails.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        painelEmails.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        painelEmails.Controls.Add(_listaDestinatarios, 0, 0);
 
-        var botaoAdicionarArquivo = Estilo.BotaoPadrao("Adicionar...");
-        var botaoRemoverArquivo = Estilo.BotaoPadrao("Remover");
-        botaoAdicionarArquivo.Click += (_, _) => AdicionarArquivos();
-        botaoRemoverArquivo.Click += (_, _) => RemoverSelecionado(_listaArquivos);
+        var barraEmails = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0) };
+        barraEmails.Controls.Add(_campoNovoDestinatario);
+        barraEmails.Controls.Add(botaoAdicionar);
+        barraEmails.Controls.Add(botaoRemover);
+        painelEmails.Controls.Add(barraEmails, 0, 1);
 
-        var painelArquivos = CriarPainelLista(_listaArquivos,
-            null, botaoAdicionarArquivo, botaoRemoverArquivo);
-        AdicionarLinha(tabela, 4, "Arquivos:", painelArquivos);
+        AdicionarLinha(tabela, 2, "E-mail(s):", painelEmails);
 
-        // --- Botões ----------------------------------------------------------
+        // --- Botões --------------------------------------------------------
         var painelBotoes = new FlowLayoutPanel
         {
             FlowDirection = FlowDirection.RightToLeft,
@@ -109,7 +99,7 @@ public class CadastroEmailForm : Form
         botaoSalvar.Click += (_, _) => Salvar();
         painelBotoes.Controls.Add(botaoSalvar);
         painelBotoes.Controls.Add(botaoCancelar);
-        tabela.Controls.Add(painelBotoes, 1, 5);
+        tabela.Controls.Add(painelBotoes, 1, 3);
 
         Controls.Add(tabela);
         CancelButton = botaoCancelar;
@@ -122,32 +112,10 @@ public class CadastroEmailForm : Form
             Text = rotulo,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.TopLeft,
-            Padding = new Padding(0, 6, 0, 0),
+            Padding = new Padding(0, 8, 0, 0),
+            ForeColor = Estilo.CorTextoSuave,
         }, 0, linha);
         tabela.Controls.Add(campo, 1, linha);
-    }
-
-    private static Control CriarPainelLista(ListBox lista, TextBox? campoTexto, params Button[] botoes)
-    {
-        var painel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 2,
-        };
-        painel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        painel.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-
-        painel.Controls.Add(lista, 0, 0);
-
-        var barra = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0) };
-        if (campoTexto is not null)
-            barra.Controls.Add(campoTexto);
-        foreach (var botao in botoes)
-            barra.Controls.Add(botao);
-        painel.Controls.Add(barra, 0, 1);
-
-        return painel;
     }
 
     private void AdicionarDestinatario()
@@ -173,48 +141,37 @@ public class CadastroEmailForm : Form
         _campoNovoDestinatario.Focus();
     }
 
-    private void AdicionarArquivos()
+    private void RemoverDestinatario()
     {
-        using var dialogo = new OpenFileDialog
-        {
-            Multiselect = true,
-            Title = "Selecionar arquivos para anexar",
-        };
-        if (dialogo.ShowDialog(this) != DialogResult.OK)
-            return;
-        foreach (var arquivo in dialogo.FileNames)
-        {
-            if (!_listaArquivos.Items.Contains(arquivo))
-                _listaArquivos.Items.Add(arquivo);
-        }
-    }
-
-    private static void RemoverSelecionado(ListBox lista)
-    {
-        if (lista.SelectedIndex >= 0)
-            lista.Items.RemoveAt(lista.SelectedIndex);
+        if (_listaDestinatarios.SelectedIndex >= 0)
+            _listaDestinatarios.Items.RemoveAt(_listaDestinatarios.SelectedIndex);
     }
 
     private void Salvar()
     {
+        if (string.IsNullOrWhiteSpace(_campoCodigo.Text))
+        {
+            MessageBox.Show(this,
+                "Informe o código do cliente (o mesmo usado nos nomes dos PDFs, ex.: 5551).",
+                "Campo obrigatório", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
         if (string.IsNullOrWhiteSpace(_campoNome.Text))
         {
-            MessageBox.Show(this, "Informe o nome do cadastro.", "Campo obrigatório",
+            MessageBox.Show(this, "Informe o nome do cliente.", "Campo obrigatório",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
         if (_listaDestinatarios.Items.Count == 0)
         {
-            MessageBox.Show(this, "Adicione pelo menos um destinatário.", "Campo obrigatório",
+            MessageBox.Show(this, "Adicione pelo menos um e-mail.", "Campo obrigatório",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
+        Cadastro.Codigo = _campoCodigo.Text.Trim();
         Cadastro.Nome = _campoNome.Text.Trim();
-        Cadastro.Assunto = _campoAssunto.Text.Trim();
-        Cadastro.Corpo = _campoCorpo.Text;
         Cadastro.Destinatarios = _listaDestinatarios.Items.Cast<string>().ToList();
-        Cadastro.Arquivos = _listaArquivos.Items.Cast<string>().ToList();
 
         DialogResult = DialogResult.OK;
         Close();

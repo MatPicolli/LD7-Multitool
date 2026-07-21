@@ -81,7 +81,7 @@ public class ImportarBoletosForm : Form
         {
             FlowDirection = FlowDirection.RightToLeft,
             Dock = DockStyle.Bottom,
-            Height = 52,
+            Height = 58,
             Padding = new Padding(8),
         };
         painelBotoes.Controls.Add(botaoImportar);

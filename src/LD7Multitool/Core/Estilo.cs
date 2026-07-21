@@ -81,7 +81,9 @@ public static class Estilo
             // texto ficar centralizado sem risco de corte.
             Padding = new Padding(14, 0, 14, 0),
             MinimumSize = new Size(0, AlturaBotao),
-            Margin = new Padding(0, 0, 8, 0),
+            // Margem vertical de 2px: centraliza o botão na barra e garante
+            // que a borda não seja cortada pelo contêiner.
+            Margin = new Padding(0, 2, 8, 2),
             FlatStyle = FlatStyle.Flat,
             BackColor = fundo,
             ForeColor = textoCor,
@@ -101,7 +103,7 @@ public static class Estilo
         var barra = new Panel
         {
             Dock = DockStyle.Top,
-            Height = AlturaBotao + 20,
+            Height = AlturaBotao + 24,
             BackColor = CorSuperficie,
             Padding = new Padding(12, 10, 12, 10),
         };

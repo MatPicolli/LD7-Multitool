@@ -1,3 +1,5 @@
+using LD7Multitool.Core;
+
 namespace LD7Multitool.Modulos.AutoEmail;
 
 /// <summary>Formulário de configuração do servidor SMTP.</summary>
@@ -13,6 +15,8 @@ public class ConfigSmtpForm : Form
     public ConfigSmtpForm()
     {
         Text = "Configurar SMTP";
+        Font = Estilo.FontePadrao;
+        BackColor = Estilo.CorSuperficie;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -56,8 +60,9 @@ public class ConfigSmtpForm : Form
             FlowDirection = FlowDirection.RightToLeft,
             Dock = DockStyle.Fill,
         };
-        var botaoSalvar = new Button { Text = "Salvar", Width = 100 };
-        var botaoCancelar = new Button { Text = "Cancelar", Width = 100, DialogResult = DialogResult.Cancel };
+        var botaoSalvar = Estilo.BotaoPrimario("Salvar");
+        var botaoCancelar = Estilo.BotaoPadrao("Cancelar");
+        botaoCancelar.DialogResult = DialogResult.Cancel;
         botaoSalvar.Click += (_, _) => Salvar();
         painelBotoes.Controls.Add(botaoSalvar);
         painelBotoes.Controls.Add(botaoCancelar);

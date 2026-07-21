@@ -1,4 +1,5 @@
 using System.Net.Mail;
+using LD7Multitool.Core;
 
 namespace LD7Multitool.Modulos.AutoEmail;
 
@@ -19,6 +20,8 @@ public class CadastroEmailForm : Form
         Cadastro = cadastro ?? new CadastroEmail();
 
         Text = cadastro is null ? "Novo cadastro de e-mail" : "Editar cadastro de e-mail";
+        Font = Estilo.FontePadrao;
+        BackColor = Estilo.CorSuperficie;
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(640, 560);
         ClientSize = new Size(640, 560);
@@ -58,9 +61,9 @@ public class CadastroEmailForm : Form
         foreach (var destinatario in Cadastro.Destinatarios)
             _listaDestinatarios.Items.Add(destinatario);
 
-        _campoNovoDestinatario = new TextBox { Width = 220 };
-        var botaoAdicionarDestinatario = new Button { Text = "Adicionar", Width = 90 };
-        var botaoRemoverDestinatario = new Button { Text = "Remover", Width = 90 };
+        _campoNovoDestinatario = new TextBox { Width = 220, Margin = new Padding(0, 3, 4, 0) };
+        var botaoAdicionarDestinatario = Estilo.BotaoPadrao("Adicionar");
+        var botaoRemoverDestinatario = Estilo.BotaoPadrao("Remover");
         botaoAdicionarDestinatario.Click += (_, _) => AdicionarDestinatario();
         botaoRemoverDestinatario.Click += (_, _) => RemoverSelecionado(_listaDestinatarios);
         _campoNovoDestinatario.KeyDown += (_, e) =>
@@ -85,8 +88,8 @@ public class CadastroEmailForm : Form
         foreach (var arquivo in Cadastro.Arquivos)
             _listaArquivos.Items.Add(arquivo);
 
-        var botaoAdicionarArquivo = new Button { Text = "Adicionar...", Width = 90 };
-        var botaoRemoverArquivo = new Button { Text = "Remover", Width = 90 };
+        var botaoAdicionarArquivo = Estilo.BotaoPadrao("Adicionar...");
+        var botaoRemoverArquivo = Estilo.BotaoPadrao("Remover");
         botaoAdicionarArquivo.Click += (_, _) => AdicionarArquivos();
         botaoRemoverArquivo.Click += (_, _) => RemoverSelecionado(_listaArquivos);
 
@@ -100,8 +103,9 @@ public class CadastroEmailForm : Form
             FlowDirection = FlowDirection.RightToLeft,
             Dock = DockStyle.Fill,
         };
-        var botaoSalvar = new Button { Text = "Salvar", Width = 100 };
-        var botaoCancelar = new Button { Text = "Cancelar", Width = 100, DialogResult = DialogResult.Cancel };
+        var botaoSalvar = Estilo.BotaoPrimario("Salvar");
+        var botaoCancelar = Estilo.BotaoPadrao("Cancelar");
+        botaoCancelar.DialogResult = DialogResult.Cancel;
         botaoSalvar.Click += (_, _) => Salvar();
         painelBotoes.Controls.Add(botaoSalvar);
         painelBotoes.Controls.Add(botaoCancelar);

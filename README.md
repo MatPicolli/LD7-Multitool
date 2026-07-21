@@ -33,6 +33,11 @@ Gerenciador de boletos com os campos:
 Recursos: filtro por estado, atalhos "Marcar como pago" / "Cancelar boleto",
 destaque de boletos vencidos (vermelho) e total em aberto no rodapé.
 
+**Importação de PDFs:** configure a pasta onde ficam os PDFs dos boletos no
+botão de engrenagem (⚙) e use **Importar boletos** — cada PDF novo da pasta
+vira um boleto (com o arquivo vinculado), bastando completar valor e validade.
+O botão **Abrir PDF** abre o arquivo vinculado ao boleto selecionado.
+
 ## Requisitos
 
 - Windows

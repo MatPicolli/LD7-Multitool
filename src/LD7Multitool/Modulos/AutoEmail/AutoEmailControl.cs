@@ -1,3 +1,5 @@
+using LD7Multitool.Core;
+
 namespace LD7Multitool.Modulos.AutoEmail;
 
 /// <summary>
@@ -14,19 +16,16 @@ public class AutoEmailControl : UserControl
     public AutoEmailControl()
     {
         Dock = DockStyle.Fill;
+        Font = Estilo.FontePadrao;
+        BackColor = Estilo.CorFundo;
 
-        var barraSuperior = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            Height = 44,
-            Padding = new Padding(8, 8, 8, 0),
-        };
+        var barraSuperior = Estilo.CriarBarraSuperior();
 
-        var botaoNovo = new Button { Text = "Novo", Width = 90 };
-        var botaoEditar = new Button { Text = "Editar", Width = 90 };
-        var botaoExcluir = new Button { Text = "Excluir", Width = 90 };
-        _botaoEnviar = new Button { Text = "Enviar e-mail", Width = 110 };
-        var botaoConfigSmtp = new Button { Text = "Configurar SMTP", Width = 130, Margin = new Padding(24, 3, 3, 3) };
+        var botaoNovo = Estilo.BotaoPrimario("+ Novo");
+        _botaoEnviar = Estilo.BotaoPrimario("Enviar e-mail");
+        var botaoEditar = Estilo.BotaoPadrao("Editar");
+        var botaoExcluir = Estilo.BotaoPerigo("Excluir");
+        var botaoConfigSmtp = Estilo.BotaoIcone("⚙", "Configurar servidor SMTP");
 
         botaoNovo.Click += (_, _) => Novo();
         botaoEditar.Click += (_, _) => Editar();
@@ -38,11 +37,23 @@ public class AutoEmailControl : UserControl
             formulario.ShowDialog(this);
         };
 
-        barraSuperior.Controls.Add(botaoNovo);
-        barraSuperior.Controls.Add(botaoEditar);
-        barraSuperior.Controls.Add(botaoExcluir);
-        barraSuperior.Controls.Add(_botaoEnviar);
-        barraSuperior.Controls.Add(botaoConfigSmtp);
+        var fluxoAcoes = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            WrapContents = false,
+            Padding = new Padding(0),
+        };
+        fluxoAcoes.Controls.Add(botaoNovo);
+        fluxoAcoes.Controls.Add(_botaoEnviar);
+        fluxoAcoes.Controls.Add(botaoEditar);
+        fluxoAcoes.Controls.Add(botaoExcluir);
+
+        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 46, Padding = new Padding(4, 0, 4, 0) };
+        botaoConfigSmtp.Dock = DockStyle.Fill;
+        painelEngrenagem.Controls.Add(botaoConfigSmtp);
+
+        barraSuperior.Controls.Add(fluxoAcoes);
+        barraSuperior.Controls.Add(painelEngrenagem);
 
         var divisao = new SplitContainer
         {
@@ -52,7 +63,14 @@ public class AutoEmailControl : UserControl
         // SplitterDistance só pode ser definido depois que o controle tem tamanho real.
         Load += (_, _) => divisao.SplitterDistance = 240;
 
-        _listaCadastros = new ListBox { Dock = DockStyle.Fill };
+        _listaCadastros = new ListBox
+        {
+            Dock = DockStyle.Fill,
+            BorderStyle = BorderStyle.None,
+            BackColor = Estilo.CorSuperficie,
+            ItemHeight = 28,
+            IntegralHeight = false,
+        };
         _listaCadastros.SelectedIndexChanged += (_, _) => MostrarDetalhes();
         _listaCadastros.DoubleClick += (_, _) => Editar();
         divisao.Panel1.Controls.Add(_listaCadastros);
@@ -63,8 +81,13 @@ public class AutoEmailControl : UserControl
             Multiline = true,
             ReadOnly = true,
             ScrollBars = ScrollBars.Vertical,
-            BackColor = SystemColors.Window,
+            BorderStyle = BorderStyle.None,
+            BackColor = Estilo.CorSuperficie,
         };
+        divisao.Panel1.Padding = new Padding(8);
+        divisao.Panel2.Padding = new Padding(12);
+        divisao.Panel1.BackColor = Estilo.CorSuperficie;
+        divisao.Panel2.BackColor = Estilo.CorSuperficie;
         divisao.Panel2.Controls.Add(_detalhes);
 
         Controls.Add(divisao);

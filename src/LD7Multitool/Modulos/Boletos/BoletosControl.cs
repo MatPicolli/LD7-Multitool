@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Globalization;
+using LD7Multitool.Core;
 
 namespace LD7Multitool.Modulos.Boletos;
 
@@ -15,31 +17,36 @@ public class BoletosControl : UserControl
     public BoletosControl()
     {
         Dock = DockStyle.Fill;
+        Font = Estilo.FontePadrao;
+        BackColor = Estilo.CorFundo;
 
-        var barraSuperior = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            Height = 44,
-            Padding = new Padding(8, 8, 8, 0),
-        };
+        // --- Barra superior --------------------------------------------------
+        var barraSuperior = Estilo.CriarBarraSuperior();
 
-        var botaoNovo = new Button { Text = "Novo", Width = 90 };
-        var botaoEditar = new Button { Text = "Editar", Width = 90 };
-        var botaoExcluir = new Button { Text = "Excluir", Width = 90 };
-        var botaoMarcarPago = new Button { Text = "Marcar como pago", Width = 140 };
-        var botaoCancelarBoleto = new Button { Text = "Cancelar boleto", Width = 120 };
+        var botaoNovo = Estilo.BotaoPrimario("+ Novo");
+        var botaoImportar = Estilo.BotaoPrimario("Importar boletos");
+        var botaoEditar = Estilo.BotaoPadrao("Editar");
+        var botaoExcluir = Estilo.BotaoPerigo("Excluir");
+        var botaoMarcarPago = Estilo.BotaoPadrao("Marcar como pago");
+        var botaoCancelarBoleto = Estilo.BotaoPadrao("Cancelar boleto");
+        var botaoAbrirPdf = Estilo.BotaoPadrao("Abrir PDF");
+        var botaoConfiguracoes = Estilo.BotaoIcone("⚙", "Configurações (pasta dos PDFs)");
 
         botaoNovo.Click += (_, _) => Novo();
+        botaoImportar.Click += (_, _) => Importar();
         botaoEditar.Click += (_, _) => Editar();
         botaoExcluir.Click += (_, _) => Excluir();
         botaoMarcarPago.Click += (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Pago);
         botaoCancelarBoleto.Click += (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Cancelado);
+        botaoAbrirPdf.Click += (_, _) => AbrirPdf();
+        botaoConfiguracoes.Click += (_, _) => AbrirConfiguracoes();
 
         _filtroEstado = new ComboBox
         {
             DropDownStyle = ComboBoxStyle.DropDownList,
-            Width = 130,
-            Margin = new Padding(16, 3, 3, 3),
+            Width = 120,
+            FlatStyle = FlatStyle.Flat,
+            Margin = new Padding(8, 5, 4, 0),
         };
         _filtroEstado.Items.Add("Todos");
         foreach (EstadoBoleto estado in Enum.GetValues<EstadoBoleto>())
@@ -47,37 +54,61 @@ public class BoletosControl : UserControl
         _filtroEstado.SelectedIndex = 0;
         _filtroEstado.SelectedIndexChanged += (_, _) => Recarregar();
 
-        barraSuperior.Controls.Add(botaoNovo);
-        barraSuperior.Controls.Add(botaoEditar);
-        barraSuperior.Controls.Add(botaoExcluir);
-        barraSuperior.Controls.Add(botaoMarcarPago);
-        barraSuperior.Controls.Add(botaoCancelarBoleto);
-        barraSuperior.Controls.Add(new Label
+        var fluxoAcoes = new FlowLayoutPanel
         {
-            Text = "Filtrar estado:",
+            Dock = DockStyle.Fill,
+            WrapContents = false,
+            AutoScroll = false,
+            Padding = new Padding(0),
+        };
+        fluxoAcoes.Controls.Add(botaoNovo);
+        fluxoAcoes.Controls.Add(botaoImportar);
+        fluxoAcoes.Controls.Add(botaoEditar);
+        fluxoAcoes.Controls.Add(botaoExcluir);
+        fluxoAcoes.Controls.Add(botaoMarcarPago);
+        fluxoAcoes.Controls.Add(botaoCancelarBoleto);
+        fluxoAcoes.Controls.Add(botaoAbrirPdf);
+        fluxoAcoes.Controls.Add(new Label
+        {
+            Text = "Estado:",
             AutoSize = true,
-            Margin = new Padding(24, 8, 0, 0),
+            ForeColor = Estilo.CorTextoSuave,
+            Margin = new Padding(16, 9, 0, 0),
         });
-        barraSuperior.Controls.Add(_filtroEstado);
+        fluxoAcoes.Controls.Add(_filtroEstado);
 
+        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 46, Padding = new Padding(4, 0, 4, 0) };
+        botaoConfiguracoes.Dock = DockStyle.Fill;
+        painelEngrenagem.Controls.Add(botaoConfiguracoes);
+
+        barraSuperior.Controls.Add(fluxoAcoes);
+        barraSuperior.Controls.Add(painelEngrenagem);
+
+        // --- Grade -----------------------------------------------------------
         _grade = new DataGridView
         {
             Dock = DockStyle.Fill,
             ReadOnly = true,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
+            AllowUserToResizeRows = false,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             MultiSelect = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             RowHeadersVisible = false,
-            BackgroundColor = SystemColors.Window,
         };
+        Estilo.EstilizarGrade(_grade);
         _grade.Columns.Add("nome", "Nome");
         _grade.Columns.Add("valor", "Valor");
         _grade.Columns.Add("validade", "Validade");
         _grade.Columns.Add("nossoNumero", "Nosso número");
         _grade.Columns.Add("nfeReferente", "NF-e referente");
         _grade.Columns.Add("estado", "Estado");
+        _grade.Columns.Add("arquivo", "PDF");
+        _grade.Columns["arquivo"]!.FillWeight = 30;
+        _grade.Columns["valor"]!.FillWeight = 55;
+        _grade.Columns["validade"]!.FillWeight = 55;
+        _grade.Columns["estado"]!.FillWeight = 50;
         _grade.CellDoubleClick += (_, e) =>
         {
             if (e.RowIndex >= 0) Editar();
@@ -86,9 +117,11 @@ public class BoletosControl : UserControl
         _resumo = new Label
         {
             Dock = DockStyle.Bottom,
-            Height = 28,
+            Height = 32,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(8, 0, 0, 0),
+            Padding = new Padding(12, 0, 0, 0),
+            BackColor = Estilo.CorSuperficie,
+            ForeColor = Estilo.CorTextoSuave,
         };
 
         Controls.Add(_grade);
@@ -117,16 +150,17 @@ public class BoletosControl : UserControl
                 boleto.Validade.ToString("dd/MM/yyyy"),
                 boleto.NossoNumero,
                 boleto.NfeReferente,
-                boleto.Estado.Descricao());
+                boleto.Estado.Descricao(),
+                boleto.CaminhoArquivo.Length > 0 ? "📄" : "");
 
             var linha = _grade.Rows[indice];
             linha.Tag = boleto;
             if (boleto.Estado == EstadoBoleto.Pago)
-                linha.DefaultCellStyle.ForeColor = Color.DarkGreen;
+                linha.DefaultCellStyle.ForeColor = Color.FromArgb(30, 130, 76);
             else if (boleto.Estado == EstadoBoleto.Cancelado)
-                linha.DefaultCellStyle.ForeColor = Color.Gray;
+                linha.DefaultCellStyle.ForeColor = Estilo.CorTextoSuave;
             else if (boleto.Vencido)
-                linha.DefaultCellStyle.ForeColor = Color.Firebrick;
+                linha.DefaultCellStyle.ForeColor = Estilo.CorPerigo;
         }
 
         var totalAberto = _boletos
@@ -160,7 +194,7 @@ public class BoletosControl : UserControl
         if (BoletoSelecionado is not { } boleto)
             return;
         var resposta = MessageBox.Show(this,
-            $"Excluir o boleto \"{boleto.Nome}\"?",
+            $"Excluir o boleto \"{boleto.Nome}\"?\n(O arquivo PDF não é apagado.)",
             "Confirmar exclusão",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
@@ -176,5 +210,60 @@ public class BoletosControl : UserControl
             return;
         BoletoRepository.AlterarEstado(boleto.Id, estado);
         Recarregar();
+    }
+
+    private void AbrirConfiguracoes()
+    {
+        using var formulario = new BoletosConfigForm();
+        formulario.ShowDialog(this);
+    }
+
+    private void Importar()
+    {
+        var pasta = BoletosConfigForm.PastaPdfs;
+        if (pasta.Length == 0 || !Directory.Exists(pasta))
+        {
+            MessageBox.Show(this,
+                "Configure primeiro a pasta dos PDFs no botão de engrenagem (⚙).",
+                "Pasta não configurada",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            AbrirConfiguracoes();
+            return;
+        }
+
+        using var formulario = new ImportarBoletosForm(pasta);
+        if (formulario.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        foreach (var boleto in formulario.BoletosImportados)
+            BoletoRepository.Inserir(boleto);
+        Recarregar();
+
+        MessageBox.Show(this,
+            $"{formulario.BoletosImportados.Count} boleto(s) importado(s).\n" +
+            "Dê dois cliques em cada um para completar valor, validade e demais dados.",
+            "Importação concluída",
+            MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void AbrirPdf()
+    {
+        if (BoletoSelecionado is not { } boleto)
+            return;
+        if (boleto.CaminhoArquivo.Length == 0)
+        {
+            MessageBox.Show(this, "Este boleto não tem um PDF vinculado.", "Sem arquivo",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        if (!File.Exists(boleto.CaminhoArquivo))
+        {
+            MessageBox.Show(this,
+                "O arquivo não foi encontrado:\n" + boleto.CaminhoArquivo,
+                "Arquivo não encontrado",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        Process.Start(new ProcessStartInfo(boleto.CaminhoArquivo) { UseShellExecute = true });
     }
 }

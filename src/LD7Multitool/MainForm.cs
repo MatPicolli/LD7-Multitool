@@ -17,23 +17,25 @@ public class MainForm : Form
     public MainForm()
     {
         Text = "LD7 Multitool";
-        MinimumSize = new Size(900, 600);
+        Font = Estilo.FontePadrao;
+        MinimumSize = new Size(1000, 640);
         StartPosition = FormStartPosition.CenterScreen;
+        BackColor = Estilo.CorFundo;
 
         _menuLateral = new FlowLayoutPanel
         {
             Dock = DockStyle.Left,
-            Width = 200,
+            Width = 210,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            BackColor = Color.FromArgb(45, 45, 60),
-            Padding = new Padding(8),
+            BackColor = Estilo.CorMenu,
+            Padding = new Padding(10),
         };
 
         _painelConteudo = new Panel
         {
             Dock = DockStyle.Fill,
-            BackColor = SystemColors.Control,
+            BackColor = Estilo.CorFundo,
         };
 
         Controls.Add(_painelConteudo);
@@ -41,14 +43,15 @@ public class MainForm : Form
 
         var titulo = new Label
         {
-            Text = "LD7 Multitool",
+            Text = "🧰  LD7 Multitool",
             ForeColor = Color.White,
-            Font = new Font("Segoe UI", 14, FontStyle.Bold),
+            Font = Estilo.FonteTitulo,
             AutoSize = false,
-            Width = 180,
-            Height = 48,
-            TextAlign = ContentAlignment.MiddleCenter,
-            Margin = new Padding(0, 0, 0, 12),
+            Width = 186,
+            Height = 56,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(6, 0, 0, 0),
+            Margin = new Padding(0, 4, 0, 16),
         };
         _menuLateral.Controls.Add(titulo);
 
@@ -75,17 +78,19 @@ public class MainForm : Form
     {
         var botao = new Button
         {
-            Text = modulo.Nome,
-            Width = 180,
-            Height = 40,
+            Text = "  " + modulo.Nome,
+            Width = 186,
+            Height = 42,
             FlatStyle = FlatStyle.Flat,
-            ForeColor = Color.White,
-            BackColor = Color.FromArgb(45, 45, 60),
+            ForeColor = Color.FromArgb(210, 213, 226),
+            BackColor = Estilo.CorMenu,
             TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Segoe UI", 10),
-            Margin = new Padding(0, 0, 0, 4),
+            Font = Estilo.FontePadrao,
+            Margin = new Padding(0, 0, 0, 6),
+            Cursor = Cursors.Hand,
         };
         botao.FlatAppearance.BorderSize = 0;
+        botao.FlatAppearance.MouseOverBackColor = Estilo.CorMenuHover;
         botao.Click += (_, _) => AbrirModulo(modulo, botao);
         return botao;
     }
@@ -93,8 +98,12 @@ public class MainForm : Form
     private void AbrirModulo(IModulo modulo, Button botao)
     {
         if (_botaoAtivo is not null)
-            _botaoAtivo.BackColor = Color.FromArgb(45, 45, 60);
-        botao.BackColor = Color.FromArgb(80, 80, 110);
+        {
+            _botaoAtivo.BackColor = Estilo.CorMenu;
+            _botaoAtivo.ForeColor = Color.FromArgb(210, 213, 226);
+        }
+        botao.BackColor = Estilo.CorMenuAtivo;
+        botao.ForeColor = Color.White;
         _botaoAtivo = botao;
 
         if (!_controlesCriados.TryGetValue(modulo, out var controle))

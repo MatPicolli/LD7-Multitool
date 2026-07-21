@@ -28,5 +28,8 @@ public class Boleto
     public string NfeReferente { get; set; } = "";
     public EstadoBoleto Estado { get; set; } = EstadoBoleto.Aberto;
 
+    /// <summary>Caminho do PDF do boleto (vazio se não houver arquivo vinculado).</summary>
+    public string CaminhoArquivo { get; set; } = "";
+
     public bool Vencido => Estado == EstadoBoleto.Aberto && Validade.Date < DateTime.Today;
 }

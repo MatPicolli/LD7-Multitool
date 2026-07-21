@@ -14,7 +14,7 @@ public static class BoletoRepository
         using var conexao = Database.AbrirConexao();
         using var comando = conexao.CreateCommand();
         comando.CommandText = """
-            SELECT id, nome, valor, validade, nosso_numero, nfe_referente, estado
+            SELECT id, nome, valor, validade, nosso_numero, nfe_referente, estado, caminho_arquivo
             FROM boletos
             """;
         if (filtroEstado is not null)
@@ -36,8 +36,8 @@ public static class BoletoRepository
         using var conexao = Database.AbrirConexao();
         using var comando = conexao.CreateCommand();
         comando.CommandText = """
-            INSERT INTO boletos (nome, valor, validade, nosso_numero, nfe_referente, estado)
-            VALUES ($nome, $valor, $validade, $nossoNumero, $nfeReferente, $estado)
+            INSERT INTO boletos (nome, valor, validade, nosso_numero, nfe_referente, estado, caminho_arquivo)
+            VALUES ($nome, $valor, $validade, $nossoNumero, $nfeReferente, $estado, $caminhoArquivo)
             RETURNING id
             """;
         PreencherParametros(comando, boleto);
@@ -55,7 +55,8 @@ public static class BoletoRepository
                 validade = $validade,
                 nosso_numero = $nossoNumero,
                 nfe_referente = $nfeReferente,
-                estado = $estado
+                estado = $estado,
+                caminho_arquivo = $caminhoArquivo
             WHERE id = $id
             """;
         PreencherParametros(comando, boleto);
@@ -90,6 +91,20 @@ public static class BoletoRepository
         comando.Parameters.AddWithValue("$nossoNumero", boleto.NossoNumero);
         comando.Parameters.AddWithValue("$nfeReferente", boleto.NfeReferente);
         comando.Parameters.AddWithValue("$estado", (int)boleto.Estado);
+        comando.Parameters.AddWithValue("$caminhoArquivo", boleto.CaminhoArquivo);
+    }
+
+    /// <summary>Caminhos de PDF já vinculados a algum boleto (para a importação não duplicar).</summary>
+    public static HashSet<string> ListarCaminhosImportados()
+    {
+        using var conexao = Database.AbrirConexao();
+        using var comando = conexao.CreateCommand();
+        comando.CommandText = "SELECT caminho_arquivo FROM boletos WHERE caminho_arquivo <> ''";
+        var caminhos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using var leitor = comando.ExecuteReader();
+        while (leitor.Read())
+            caminhos.Add(leitor.GetString(0));
+        return caminhos;
     }
 
     private static Boleto Ler(SqliteDataReader leitor) => new()
@@ -101,5 +116,6 @@ public static class BoletoRepository
         NossoNumero = leitor.GetString(4),
         NfeReferente = leitor.GetString(5),
         Estado = (EstadoBoleto)leitor.GetInt32(6),
+        CaminhoArquivo = leitor.GetString(7),
     };
 }

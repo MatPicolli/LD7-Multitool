@@ -51,16 +51,29 @@ public static class Database
             );
 
             CREATE TABLE IF NOT EXISTS boletos (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome          TEXT NOT NULL,
-                valor         TEXT NOT NULL,
-                validade      TEXT NOT NULL,
-                nosso_numero  TEXT NOT NULL DEFAULT '',
-                nfe_referente TEXT NOT NULL DEFAULT '',
-                estado        INTEGER NOT NULL DEFAULT 0
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome            TEXT NOT NULL,
+                valor           TEXT NOT NULL,
+                validade        TEXT NOT NULL,
+                nosso_numero    TEXT NOT NULL DEFAULT '',
+                nfe_referente   TEXT NOT NULL DEFAULT '',
+                estado          INTEGER NOT NULL DEFAULT 0,
+                caminho_arquivo TEXT NOT NULL DEFAULT ''
             );
             """;
         comando.ExecuteNonQuery();
+
+        // Migração: bancos criados antes da coluna caminho_arquivo.
+        using var verificar = conexao.CreateCommand();
+        verificar.CommandText =
+            "SELECT COUNT(*) FROM pragma_table_info('boletos') WHERE name = 'caminho_arquivo'";
+        if ((long)verificar.ExecuteScalar()! == 0)
+        {
+            using var alterar = conexao.CreateCommand();
+            alterar.CommandText =
+                "ALTER TABLE boletos ADD COLUMN caminho_arquivo TEXT NOT NULL DEFAULT ''";
+            alterar.ExecuteNonQuery();
+        }
 
         // Chaves estrangeiras precisam ser habilitadas por conexão no SQLite;
         // como usamos ON DELETE CASCADE, os repositórios cuidam disso ao abrir.

@@ -130,8 +130,11 @@ public static class Estilo
         grade.DefaultCellStyle.ForeColor = CorTexto;
         grade.DefaultCellStyle.Font = FontePadrao;
         grade.DefaultCellStyle.Padding = new Padding(6, 0, 0, 0);
-        grade.DefaultCellStyle.SelectionBackColor = CorSelecao;
-        grade.DefaultCellStyle.SelectionForeColor = CorTexto;
+        // Seleção com contraste forte: fundo azul sólido e letra branca
+        // (vale também para linhas coloridas por estado — pago/cancelado/vencido —
+        // pois elas só definem ForeColor, herdando estas cores de seleção).
+        grade.DefaultCellStyle.SelectionBackColor = CorPrimaria;
+        grade.DefaultCellStyle.SelectionForeColor = Color.White;
         grade.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 250, 253);
     }
 }

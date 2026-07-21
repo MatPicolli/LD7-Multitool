@@ -20,19 +20,25 @@ public static class LeitorBoletoPdf
     private static readonly Regex LinhaDigitavelRegex = new(
         @"\d{5}\.?\d{5}\s*\d{5}\.?\d{6}\s*\d{5}\.?\d{6}\s*\d\s*(\d{14})");
 
-    // Nosso número no formato cooperativa/número (ex.: 3069/3673030).
-    private static readonly Regex NossoNumeroRegex = new(@"\b(\d{3,4}/\d{6,10})\b");
-
     // Linha "nome do pagador + CNPJ/CPF" (o CNPJ do beneficiário costuma
     // aparecer sozinho na linha, então não é capturado aqui).
     private static readonly Regex PagadorRegex = new(
         @"^\s*(?<nome>[^\r\n]{4,70}?)\s+(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})\s*$",
         RegexOptions.Multiline);
 
-    // Linha da ficha: nº documento, espécie (DM etc.), aceite (S/N) e data.
-    private static readonly Regex NumeroDocumentoRegex = new(
-        @"^\s*(?<doc>[\w./-]{1,15})\s+[A-Z]{1,3}\s+[SN]\s+\d{2}/\d{2}/\d{4}",
+    // Linha da ficha de compensação: nº documento, espécie (DM etc.),
+    // aceite (S/N), data de processamento e NOSSO NÚMERO no fim.
+    // Atenção: o "nosso número" é o identificador único de cada boleto
+    // (ex.: 1334-0) — não confundir com o código cooperativa/beneficiário
+    // (ex.: 3069/3673030), que é igual em todos os boletos do emissor.
+    private static readonly Regex FichaRegex = new(
+        @"^\s*(?<doc>[\w./-]{1,15})\s+[A-Z]{1,3}\s+[SN]\s+\d{2}/\d{2}/\d{4}\s+(?<nossoNumero>[\d./-]{2,20})\s*$",
         RegexOptions.Multiline);
+
+    // Fallback do nosso número: linha contendo apenas "número-dígito"
+    // (ex.: 1334-0). Não colide com CEP (5+3 dígitos) nem com datas.
+    private static readonly Regex NossoNumeroSoltoRegex = new(
+        @"^\s*(\d{1,12}-\d)\s*$", RegexOptions.Multiline);
 
     // O fator de vencimento conta dias a partir de 07/10/1997; a numeração
     // reiniciou em 1000 no dia 22/02/2025 (circular FEBRABAN).
@@ -85,17 +91,22 @@ public static class LeitorBoletoPdf
             }
         }
 
-        var nossoNumero = NossoNumeroRegex.Match(texto);
-        if (nossoNumero.Success)
-            boleto.NossoNumero = nossoNumero.Groups[1].Value;
-
         var pagador = PagadorRegex.Match(texto);
         if (pagador.Success)
             boleto.Nome = pagador.Groups["nome"].Value.Trim();
 
-        var numeroDocumento = NumeroDocumentoRegex.Match(texto);
-        if (numeroDocumento.Success)
-            boleto.NfeReferente = numeroDocumento.Groups["doc"].Value;
+        var ficha = FichaRegex.Match(texto);
+        if (ficha.Success)
+        {
+            boleto.NfeReferente = ficha.Groups["doc"].Value;
+            boleto.NossoNumero = ficha.Groups["nossoNumero"].Value;
+        }
+        else
+        {
+            var solto = NossoNumeroSoltoRegex.Match(texto);
+            if (solto.Success)
+                boleto.NossoNumero = solto.Groups[1].Value;
+        }
 
         return boleto;
     }

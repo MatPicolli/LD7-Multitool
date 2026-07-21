@@ -3,8 +3,10 @@
 Programa "canivete suíço" modular para Windows: uma janela principal com menu
 lateral onde cada **módulo** é um mini-programa independente.
 
-Interface totalmente em **português**. Dados gravados em banco **SQLite** local
-(`%AppData%\LD7Multitool\dados.db`).
+Interface totalmente em **português**. Dados e configurações gravados num banco
+**SQLite** (`dados.db`) na **mesma pasta do executável** — o programa é
+portátil: copiar a pasta leva tudo junto. (Bancos criados por versões antigas
+em `%AppData%\LD7Multitool` são migrados automaticamente na primeira execução.)
 
 ## Módulos atuais
 

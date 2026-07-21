@@ -3,11 +3,17 @@ using Microsoft.Data.Sqlite;
 namespace LD7Multitool.Core;
 
 /// <summary>
-/// Acesso ao banco SQLite local. O arquivo fica em %AppData%\LD7Multitool\dados.db.
+/// Acesso ao banco SQLite local. O arquivo dados.db (que também guarda todas
+/// as configurações) fica na mesma pasta do executável, tornando o programa
+/// portátil — copiar a pasta leva os dados junto.
 /// </summary>
 public static class Database
 {
-    public static string CaminhoBanco { get; } = Path.Combine(
+    public static string CaminhoBanco { get; } =
+        Path.Combine(AppContext.BaseDirectory, "dados.db");
+
+    // Local usado pelas versões anteriores; ainda é lido para migração.
+    private static string CaminhoBancoAntigo => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "LD7Multitool",
         "dados.db");
@@ -21,7 +27,11 @@ public static class Database
 
     public static void Inicializar()
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(CaminhoBanco)!);
+        // Migração: versões antigas gravavam em %AppData%\LD7Multitool.
+        // Se ainda não há banco ao lado do executável, os dados antigos são
+        // copiados para cá (o original fica no lugar, como backup).
+        if (!File.Exists(CaminhoBanco) && File.Exists(CaminhoBancoAntigo))
+            File.Copy(CaminhoBancoAntigo, CaminhoBanco);
 
         using var conexao = AbrirConexao();
         using var comando = conexao.CreateCommand();

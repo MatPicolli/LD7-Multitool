@@ -67,7 +67,7 @@ public class BoletosControl : UserControl
         _campoPesquisa = new TextBox
         {
             Dock = DockStyle.Fill,
-            PlaceholderText = "Pesquisar por nome, valor, validade, nosso número ou NF-e...",
+            PlaceholderText = "Pesquisar por nome, valor, vencimento, nosso número ou NF-e...",
             Margin = new Padding(0),
         };
         _campoPesquisa.TextChanged += (_, _) => AtualizarGrade();
@@ -132,7 +132,7 @@ public class BoletosControl : UserControl
         Estilo.EstilizarGrade(_grade);
         _grade.Columns.Add("nome", "Nome");
         _grade.Columns.Add("valor", "Valor");
-        _grade.Columns.Add("validade", "Validade");
+        _grade.Columns.Add("validade", "Vencimento");
         _grade.Columns.Add("nossoNumero", "Nosso número");
         _grade.Columns.Add("nfeReferente", "NF-e referente");
         _grade.Columns.Add("estado", "Estado");

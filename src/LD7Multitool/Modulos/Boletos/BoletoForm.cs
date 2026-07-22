@@ -99,7 +99,7 @@ public class BoletoForm : Form
 
         AdicionarLinha(tabela, 0, "Nome:", _campoNome);
         AdicionarLinha(tabela, 1, "Valor (R$):", _campoValor);
-        AdicionarLinha(tabela, 2, "Validade:", _campoValidade);
+        AdicionarLinha(tabela, 2, "Vencimento:", _campoValidade);
         AdicionarLinha(tabela, 3, "Nosso número:", _campoNossoNumero);
         AdicionarLinha(tabela, 4, "NF-e referente:", _campoNfeReferente);
         AdicionarLinha(tabela, 5, "Estado:", _campoEstado);

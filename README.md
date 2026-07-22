@@ -40,7 +40,7 @@ enviados a partir do módulo de Boletos.
 Gerenciador de boletos com os campos:
 - Nome
 - Valor
-- Validade
+- Vencimento
 - Nosso número
 - NF-e referente
 - Estado: **Aberto**, **Pago**, **Cancelado** ou **Protestado**

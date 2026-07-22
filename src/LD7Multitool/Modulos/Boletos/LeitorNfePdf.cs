@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
@@ -41,11 +42,25 @@ public static class LeitorNfePdf
         return m.Success ? Normalizar(m.Groups[1].Value) : null;
     }
 
-    /// <summary>Só dígitos, sem zeros à esquerda (ex.: "000.009.028" → "9028").</summary>
+    /// <summary>
+    /// Número da NF-e normalizado para comparação. Os pontos (separador de
+    /// milhar do DANFE, ex.: "000.009.028") são removidos e juntados; depois
+    /// pega-se apenas o PRIMEIRO grupo de dígitos, descartando o sufixo de
+    /// parcela do boleto (ex.: "9028/001" → "9028"), e tiram-se os zeros à
+    /// esquerda. Assim "000.009.028", "9028" e "9028/001" resultam em "9028".
+    /// </summary>
     public static string Normalizar(string numero)
     {
-        var digitos = new string(numero.Where(char.IsDigit).ToArray()).TrimStart('0');
-        return digitos.Length == 0 ? "" : digitos;
+        var semPontos = numero.Replace(".", "");
+        var construtor = new StringBuilder();
+        foreach (var caractere in semPontos)
+        {
+            if (char.IsDigit(caractere))
+                construtor.Append(caractere);
+            else if (construtor.Length > 0)
+                break; // acabou o primeiro grupo de dígitos (ex.: antes de "/001")
+        }
+        return construtor.ToString().TrimStart('0');
     }
 
     /// <summary>

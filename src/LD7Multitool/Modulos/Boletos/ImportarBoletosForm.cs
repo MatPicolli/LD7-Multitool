@@ -58,9 +58,15 @@ public class ImportarBoletosForm : Form
         {
             foreach (var caminho in novos)
             {
-                var boleto = LeitorBoletoPdf.Ler(caminho);
-                _candidatos.Add(boleto);
-                _listaArquivos.Items.Add(DescreverCandidato(boleto), isChecked: true);
+                // Um PDF pode gerar vários boletos (uma parcela por página).
+                var parcelas = LeitorBoletoPdf.Ler(caminho);
+                for (var i = 0; i < parcelas.Count; i++)
+                {
+                    _candidatos.Add(parcelas[i]);
+                    _listaArquivos.Items.Add(
+                        DescreverCandidato(parcelas[i], i + 1, parcelas.Count),
+                        isChecked: true);
+                }
             }
         }
         finally
@@ -93,13 +99,15 @@ public class ImportarBoletosForm : Form
         CancelButton = botaoCancelar;
     }
 
-    private static string DescreverCandidato(Boleto boleto)
+    private static string DescreverCandidato(Boleto boleto, int parcela, int totalParcelas)
     {
         var arquivo = Path.GetFileName(boleto.CaminhoArquivo);
         var valor = boleto.Valor > 0
             ? boleto.Valor.ToString("C2", CulturaBr)
             : "valor não lido";
-        return $"{boleto.Nome}  —  {valor}, venc. {boleto.Validade:dd/MM/yyyy}  ({arquivo})";
+        // Só rotula a parcela quando o PDF tem mais de uma.
+        var rotuloParcela = totalParcelas > 1 ? $"  [parcela {parcela}/{totalParcelas}]" : "";
+        return $"{boleto.Nome}  —  {valor}, venc. {boleto.Validade:dd/MM/yyyy}{rotuloParcela}  ({arquivo})";
     }
 
     private void Importar()

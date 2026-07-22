@@ -7,6 +7,9 @@ namespace LD7Multitool.Modulos.Boletos;
 /// <summary>
 /// Extração automática (melhor esforço) dos dados de um boleto em PDF.
 ///
+/// Um PDF pode conter várias parcelas — uma por página. A leitura é feita
+/// página a página: cada página com uma linha digitável vira um boleto.
+///
 /// Valor e vencimento vêm da linha digitável, que segue o padrão FEBRABAN e
 /// por isso funciona com boleto de qualquer banco: nos últimos 14 dígitos,
 /// os 4 primeiros são o "fator de vencimento" e os 10 restantes o valor em
@@ -46,31 +49,51 @@ public static class LeitorBoletoPdf
     private static readonly DateTime InicioNovoCiclo = new(2025, 2, 22);
 
     /// <summary>
-    /// Lê o PDF e monta um boleto com o que conseguir extrair.
-    /// Nunca lança exceção: um PDF ilegível vira um boleto só com o nome
-    /// do arquivo, para o usuário preencher manualmente.
+    /// Lê o PDF e monta um boleto por parcela (uma por página com linha
+    /// digitável). Nunca lança exceção nem retorna vazio: um PDF ilegível ou
+    /// sem linha digitável vira um único boleto com o nome do arquivo, para o
+    /// usuário preencher manualmente.
     /// </summary>
-    public static Boleto Ler(string caminho)
+    public static List<Boleto> Ler(string caminho)
     {
-        var boleto = new Boleto
-        {
-            Nome = Path.GetFileNameWithoutExtension(caminho),
-            Validade = DateTime.Today,
-            Estado = EstadoBoleto.Aberto,
-            CaminhoArquivo = caminho,
-        };
-
-        string texto;
+        List<string> paginas;
         try
         {
             using var documento = PdfDocument.Open(caminho);
-            texto = string.Join("\n",
-                documento.GetPages().Select(p => ContentOrderTextExtractor.GetText(p)));
+            paginas = documento.GetPages()
+                .Select(p => ContentOrderTextExtractor.GetText(p))
+                .ToList();
         }
         catch
         {
-            return boleto;
+            return new List<Boleto> { BoletoVazio(caminho) };
         }
+
+        // Cada página com linha digitável é uma parcela.
+        var boletos = paginas
+            .Where(texto => LinhaDigitavelRegex.IsMatch(texto))
+            .Select(texto => MontarBoleto(texto, caminho))
+            .ToList();
+
+        // Sem nenhuma parcela reconhecível (PDF escaneado, layout atípico):
+        // devolve um boleto único para o usuário completar manualmente.
+        return boletos.Count > 0
+            ? boletos
+            : new List<Boleto> { BoletoVazio(caminho) };
+    }
+
+    private static Boleto BoletoVazio(string caminho) => new()
+    {
+        Nome = Path.GetFileNameWithoutExtension(caminho),
+        Validade = DateTime.Today,
+        Estado = EstadoBoleto.Aberto,
+        CaminhoArquivo = caminho,
+    };
+
+    /// <summary>Extrai os campos de uma página que já contém linha digitável.</summary>
+    private static Boleto MontarBoleto(string texto, string caminho)
+    {
+        var boleto = BoletoVazio(caminho);
 
         var linhaDigitavel = LinhaDigitavelRegex.Match(texto);
         if (linhaDigitavel.Success)

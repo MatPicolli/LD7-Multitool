@@ -45,8 +45,10 @@ Recursos: filtro por estado, atalhos "Marcar como pago" / "Cancelar boleto",
 destaque de boletos vencidos (vermelho) e total em aberto no rodapé.
 
 **Importação de PDFs:** configure a pasta onde ficam os PDFs dos boletos no
-botão de engrenagem (⚙) e use **Importar boletos** — cada PDF novo da pasta
-vira um boleto com o arquivo vinculado e os dados **extraídos automaticamente**:
+botão de engrenagem (⚙) e use **Importar boletos** — cada PDF novo da pasta é
+lido e os dados são **extraídos automaticamente**. Um PDF com **várias parcelas**
+(uma por página) gera um boleto para cada parcela, cada um com seu próprio valor,
+vencimento e nosso número:
 
 - **Valor** e **vencimento** são lidos da linha digitável (padrão FEBRABAN,
   funciona com boleto de qualquer banco);

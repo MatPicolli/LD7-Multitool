@@ -41,8 +41,11 @@ Gerenciador de boletos com os campos:
 - NF-e referente
 - Estado: **Aberto**, **Pago** ou **Cancelado**
 
-Recursos: filtro por estado, atalhos "Marcar como pago" / "Cancelar boleto",
-destaque de boletos vencidos (vermelho) e total em aberto no rodapé.
+Recursos: **pesquisa** por nome, valor, validade, nosso número ou NF-e
+referente; filtro por estado; ordenação por qualquer coluna clicando no
+cabeçalho (validade ordena por data e valor por número, não pelo texto);
+atalhos "Marcar como pago" / "Cancelar boleto"; destaque de boletos vencidos
+(vermelho) e total em aberto no rodapé.
 
 **Importação de PDFs:** configure a pasta onde ficam os PDFs dos boletos no
 botão de engrenagem (⚙) e use **Importar boletos** — cada PDF novo da pasta é

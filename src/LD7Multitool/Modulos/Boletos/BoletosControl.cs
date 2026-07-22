@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using LD7Multitool.Core;
 
 namespace LD7Multitool.Modulos.Boletos;
@@ -11,8 +12,10 @@ public class BoletosControl : UserControl
 
     private readonly DataGridView _grade;
     private readonly ComboBox _filtroEstado;
+    private readonly TextBox _campoPesquisa;
     private readonly Label _resumo;
-    private List<Boleto> _boletos = new();
+    private List<Boleto> _todos = new();
+    private List<Boleto> _visiveis = new();
 
     public BoletosControl()
     {
@@ -37,19 +40,6 @@ public class BoletosControl : UserControl
         botaoExcluir.Click += (_, _) => Excluir();
         botaoConfiguracoes.Click += (_, _) => AbrirConfiguracoes();
 
-        _filtroEstado = new ComboBox
-        {
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Width = 120,
-            FlatStyle = FlatStyle.Flat,
-            Margin = new Padding(6, 4, 0, 0),
-        };
-        _filtroEstado.Items.Add("Todos");
-        foreach (EstadoBoleto estado in Enum.GetValues<EstadoBoleto>())
-            _filtroEstado.Items.Add(estado.Descricao());
-        _filtroEstado.SelectedIndex = 0;
-        _filtroEstado.SelectedIndexChanged += (_, _) => Recarregar();
-
         var fluxoAcoes = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -62,14 +52,6 @@ public class BoletosControl : UserControl
         fluxoAcoes.Controls.Add(botaoEditar);
         fluxoAcoes.Controls.Add(botaoAbrirPdf);
         fluxoAcoes.Controls.Add(botaoExcluir);
-        fluxoAcoes.Controls.Add(new Label
-        {
-            Text = "Estado:",
-            AutoSize = true,
-            ForeColor = Estilo.CorTextoSuave,
-            Margin = new Padding(12, 8, 0, 0),
-        });
-        fluxoAcoes.Controls.Add(_filtroEstado);
 
         var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0, 2, 0, 2) };
         botaoConfiguracoes.Dock = DockStyle.Fill;
@@ -77,6 +59,59 @@ public class BoletosControl : UserControl
 
         barraSuperior.Controls.Add(fluxoAcoes);
         barraSuperior.Controls.Add(painelEngrenagem);
+
+        // --- Barra de filtro (pesquisa + estado) -----------------------------
+        _campoPesquisa = new TextBox
+        {
+            Dock = DockStyle.Fill,
+            PlaceholderText = "Pesquisar por nome, valor, validade, nosso número ou NF-e...",
+            Margin = new Padding(0),
+        };
+        _campoPesquisa.TextChanged += (_, _) => AtualizarGrade();
+
+        _filtroEstado = new ComboBox
+        {
+            Dock = DockStyle.Fill,
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            FlatStyle = FlatStyle.Flat,
+            Margin = new Padding(0),
+        };
+        _filtroEstado.Items.Add("Todos");
+        foreach (EstadoBoleto estado in Enum.GetValues<EstadoBoleto>())
+            _filtroEstado.Items.Add(estado.Descricao());
+        _filtroEstado.SelectedIndex = 0;
+        _filtroEstado.SelectedIndexChanged += (_, _) => Recarregar();
+
+        var barraFiltro = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            Height = 44,
+            ColumnCount = 4,
+            RowCount = 1,
+            BackColor = Estilo.CorSuperficie,
+            Padding = new Padding(12, 6, 12, 6),
+        };
+        barraFiltro.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70));
+        barraFiltro.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        barraFiltro.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
+        barraFiltro.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
+        barraFiltro.Controls.Add(new Label
+        {
+            Text = "Pesquisar:",
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = Estilo.CorTextoSuave,
+        }, 0, 0);
+        barraFiltro.Controls.Add(_campoPesquisa, 1, 0);
+        barraFiltro.Controls.Add(new Label
+        {
+            Text = "Estado:",
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleRight,
+            ForeColor = Estilo.CorTextoSuave,
+            Padding = new Padding(0, 0, 8, 0),
+        }, 2, 0);
+        barraFiltro.Controls.Add(_filtroEstado, 3, 0);
 
         // --- Grade -----------------------------------------------------------
         _grade = new DataGridView
@@ -108,6 +143,28 @@ public class BoletosControl : UserControl
             if (e.RowIndex >= 0) Editar();
         };
 
+        // Ordenação por clique no cabeçalho usando o valor real (não o texto):
+        // validade compara datas e valor compara números, corrigindo o sort
+        // que antes ordenava "dd/MM/yyyy" e "R$ x" como texto.
+        _grade.SortCompare += (_, e) =>
+        {
+            if (_grade.Rows[e.RowIndex1].Tag is not Boleto b1 ||
+                _grade.Rows[e.RowIndex2].Tag is not Boleto b2)
+            {
+                return;
+            }
+
+            e.SortResult = e.Column.Name switch
+            {
+                "validade" => b1.Validade.CompareTo(b2.Validade),
+                "valor" => b1.Valor.CompareTo(b2.Valor),
+                _ => string.Compare(
+                    Convert.ToString(e.CellValue1), Convert.ToString(e.CellValue2),
+                    StringComparison.CurrentCultureIgnoreCase),
+            };
+            e.Handled = true;
+        };
+
         // Ações de estado ficam no menu de contexto para não lotar a barra.
         var menuContexto = new ContextMenuStrip();
         menuContexto.Items.Add("Editar", null, (_, _) => Editar());
@@ -135,8 +192,12 @@ public class BoletosControl : UserControl
             ForeColor = Estilo.CorTextoSuave,
         };
 
+        // Ordem de docking (índice maior é posicionado primeiro / mais externo):
+        // barraSuperior no topo, barraFiltro logo abaixo, resumo no rodapé e
+        // a grade preenchendo o restante.
         Controls.Add(_grade);
         Controls.Add(_resumo);
+        Controls.Add(barraFiltro);
         Controls.Add(barraSuperior);
 
         Recarregar();
@@ -148,12 +209,23 @@ public class BoletosControl : UserControl
     private Boleto? BoletoSelecionado =>
         _grade.SelectedRows.Count == 0 ? null : (Boleto)_grade.SelectedRows[0].Tag!;
 
+    /// <summary>Recarrega do banco (com o filtro de estado) e reaplica a pesquisa.</summary>
     private void Recarregar()
     {
-        _boletos = BoletoRepository.Listar(FiltroSelecionado);
+        _todos = BoletoRepository.Listar(FiltroSelecionado);
+        AtualizarGrade();
+    }
+
+    /// <summary>Aplica o texto da pesquisa sobre a lista já carregada e repovoa a grade.</summary>
+    private void AtualizarGrade()
+    {
+        var termo = Normalizar(_campoPesquisa.Text.Trim());
+        _visiveis = termo.Length == 0
+            ? _todos.ToList()
+            : _todos.Where(b => TextoPesquisavel(b).Contains(termo)).ToList();
 
         _grade.Rows.Clear();
-        foreach (var boleto in _boletos)
+        foreach (var boleto in _visiveis)
         {
             var indice = _grade.Rows.Add(
                 boleto.Nome,
@@ -174,11 +246,40 @@ public class BoletosControl : UserControl
                 linha.DefaultCellStyle.ForeColor = Estilo.CorPerigo;
         }
 
-        var totalAberto = _boletos
+        var totalAberto = _visiveis
             .Where(b => b.Estado == EstadoBoleto.Aberto)
             .Sum(b => b.Valor);
-        _resumo.Text = $"{_boletos.Count} boleto(s) — total em aberto: {totalAberto.ToString("C2", CulturaBr)}" +
+        _resumo.Text = $"{_visiveis.Count} boleto(s) — total em aberto: {totalAberto.ToString("C2", CulturaBr)}" +
             "   |   Clique-direito num boleto para mais ações";
+    }
+
+    /// <summary>Junta os campos de um boleto num texto normalizado para a busca.</summary>
+    private static string TextoPesquisavel(Boleto boleto)
+    {
+        // Inclui o valor em dois formatos (1234,50 e 1234.50) para casar tanto
+        // com vírgula quanto com ponto, e a validade como dd/MM/yyyy.
+        var partes = string.Join(' ',
+            boleto.Nome,
+            boleto.Valor.ToString("0.00", CulturaBr),
+            boleto.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+            boleto.Validade.ToString("dd/MM/yyyy"),
+            boleto.NossoNumero,
+            boleto.NfeReferente,
+            boleto.Estado.Descricao());
+        return Normalizar(partes);
+    }
+
+    /// <summary>Minúsculas e sem acentos, para uma busca tolerante.</summary>
+    private static string Normalizar(string texto)
+    {
+        var decomposto = texto.Normalize(NormalizationForm.FormD);
+        var construtor = new StringBuilder(decomposto.Length);
+        foreach (var caractere in decomposto)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(caractere) != UnicodeCategory.NonSpacingMark)
+                construtor.Append(char.ToLowerInvariant(caractere));
+        }
+        return construtor.ToString();
     }
 
     private void Novo()

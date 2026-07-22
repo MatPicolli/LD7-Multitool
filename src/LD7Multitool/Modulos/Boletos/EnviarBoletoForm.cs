@@ -28,6 +28,9 @@ public class EnviarBoletoForm : Form
 
     private readonly List<ItemEmail> _todosEmails = new();
 
+    // Cadastro escolhido (para lembrar por nome do boleto na próxima vez).
+    private long? _cadastroSelecionadoId;
+
     public EnviarBoletoForm(Boleto boleto)
     {
         _boleto = boleto;
@@ -174,7 +177,7 @@ public class EnviarBoletoForm : Form
         _campoAssunto = new TextBox
         {
             Dock = DockStyle.Fill,
-            Text = $"Boleto — {_boleto.Nome} (venc. {_boleto.Validade:dd/MM/yyyy})",
+            Text = ModeloEmailBoleto.AplicarAssunto(_boleto),
         };
         AdicionarLinha(tabela, 6, "Assunto:", _campoAssunto);
 
@@ -183,7 +186,7 @@ public class EnviarBoletoForm : Form
             Dock = DockStyle.Fill,
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
-            Text = "Olá,\r\n\r\nSegue em anexo o boleto.\r\n\r\nAtenciosamente.",
+            Text = ModeloEmailBoleto.AplicarCorpo(_boleto),
         };
         AdicionarLinha(tabela, 7, "Mensagem:", _campoCorpo);
 
@@ -207,6 +210,26 @@ public class EnviarBoletoForm : Form
         Controls.Add(tabela);
         Controls.Add(painelBotoes);
         CancelButton = botaoCancelar;
+
+        AplicarCadastroLembrado();
+    }
+
+    /// <summary>
+    /// Se já houve envio para um boleto de mesmo nome, pré-seleciona o cadastro
+    /// usado da última vez, adicionando seus e-mails aos destinatários.
+    /// </summary>
+    private void AplicarCadastroLembrado()
+    {
+        if (PreferenciaCadastroRepository.ObterCadastro(_boleto.Nome) is not long cadastroId)
+            return;
+
+        var emails = _todosEmails.Where(i => i.CadastroId == cadastroId).ToList();
+        if (emails.Count == 0)
+            return; // cadastro foi excluído ou ficou sem e-mails
+
+        foreach (var item in emails)
+            AdicionarDestinatario(item.Email);
+        _cadastroSelecionadoId = cadastroId;
     }
 
     private static void AdicionarLinha(TableLayoutPanel tabela, int linha, string rotulo, Control campo)
@@ -248,6 +271,7 @@ public class EnviarBoletoForm : Form
             {
                 _todosEmails.Add(new ItemEmail(
                     Email: email,
+                    CadastroId: cadastro.Id,
                     Rotulo: $"{email} — {cadastro.Nome} ({cadastro.Codigo})",
                     Filtro: Normalizar($"{cadastro.Codigo} {cadastro.Nome} {email}")));
             }
@@ -275,7 +299,10 @@ public class EnviarBoletoForm : Form
     private void AdicionarCadastradoSelecionado()
     {
         if (_resultados.SelectedItem is ItemEmail item)
+        {
             AdicionarDestinatario(item.Email);
+            _cadastroSelecionadoId = item.CadastroId; // lembra o cadastro escolhido
+        }
     }
 
     /// <summary>Minúsculas e sem acentos, para uma busca tolerante.</summary>
@@ -340,6 +367,11 @@ public class EnviarBoletoForm : Form
             await EnvioEmailService.EnviarAsync(
                 _config, destinatarios, _campoAssunto.Text, _campoCorpo.Text, anexos);
             HistoricoEmailRepository.Registrar(destinatarios, _campoAssunto.Text, anexos.Count);
+
+            // Lembra o cadastro usado para boletos com este mesmo nome.
+            if (_cadastroSelecionadoId is long cadastroId)
+                PreferenciaCadastroRepository.Definir(_boleto.Nome, cadastroId);
+
             MessageBox.Show(this, $"Boleto enviado para {destinatarios.Count} destinatário(s)!",
                 "Envio concluído", MessageBoxButtons.OK, MessageBoxIcon.Information);
             DialogResult = DialogResult.OK;
@@ -357,8 +389,8 @@ public class EnviarBoletoForm : Form
         }
     }
 
-    /// <summary>Item da busca de cadastrados: e-mail, rótulo exibido e texto de filtro.</summary>
-    private sealed record ItemEmail(string Email, string Rotulo, string Filtro)
+    /// <summary>Item da busca de cadastrados: e-mail, cadastro, rótulo e texto de filtro.</summary>
+    private sealed record ItemEmail(string Email, long CadastroId, string Rotulo, string Filtro)
     {
         public override string ToString() => Rotulo;
     }

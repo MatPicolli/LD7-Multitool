@@ -61,6 +61,11 @@ public static class Database
                 anexos     INTEGER NOT NULL DEFAULT 0
             );
 
+            CREATE TABLE IF NOT EXISTS preferencia_cadastro_boleto (
+                nome        TEXT PRIMARY KEY COLLATE NOCASE,
+                cadastro_id INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS boletos (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome            TEXT NOT NULL,

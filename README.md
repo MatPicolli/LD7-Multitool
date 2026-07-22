@@ -31,6 +31,9 @@ que envia um e-mail de teste para o próprio remetente) e as duas **pastas de
 arquivos** (Notas Fiscais e Boletos). A senha do SMTP é protegida com DPAPI
 (vinculada ao usuário do Windows) — nunca fica em texto puro no banco.
 
+Nas configurações (⚙) também dá para editar o **modelo padrão** do assunto e do
+corpo do e-mail, com placeholders `{cliente}`, `{codigo}` e `{tipo}`.
+
 A tela principal mostra ainda um **histórico dos últimos e-mails enviados**
 (data/hora, destinatários, assunto e quantidade de anexos), incluindo os
 enviados a partir do módulo de Boletos.
@@ -71,6 +74,12 @@ cadastrado (buscável por código ou nome) ou digitando um e-mail manualmente.
 O PDF do boleto vai como anexo e, se houver uma **NF-e vinculada**, há a opção
 de anexá-la junto. Pelo menu de clique-direito dá para abrir o PDF do boleto
 ou a NF-e vinculada.
+
+O cadastro escolhido no envio fica **memorizado pelo nome do boleto**: ao enviar
+outro boleto do mesmo pagador, os e-mails daquele cadastro já vêm
+pré-selecionados. O assunto e o corpo padrão do e-mail de boleto também são
+editáveis nas configurações (⚙), com placeholders `{nome}`, `{valor}` e
+`{vencimento}`.
 
 **Importação de PDFs:** configure a pasta onde ficam os PDFs dos boletos no
 botão de engrenagem (⚙) e use **Importar boletos** — cada PDF novo da pasta é

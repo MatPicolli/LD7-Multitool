@@ -16,6 +16,8 @@ public class AutoEmailConfigForm : Form
     private readonly TextBox _campoRemetente;
     private readonly TextBox _campoPastaNfe;
     private readonly TextBox _campoPastaBoletos;
+    private readonly TextBox _campoAssuntoModelo;
+    private readonly TextBox _campoCorpoModelo;
     private readonly Button _botaoTestar;
 
     public AutoEmailConfigForm()
@@ -27,7 +29,7 @@ public class AutoEmailConfigForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(560, 500);
+        ClientSize = new Size(560, 640);
 
         var config = ConfigSmtp.Carregar();
 
@@ -35,7 +37,7 @@ public class AutoEmailConfigForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 11,
+            RowCount = 15,
             Padding = new Padding(16),
         };
         tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
@@ -55,6 +57,14 @@ public class AutoEmailConfigForm : Form
         _campoRemetente = new TextBox { Dock = DockStyle.Fill, Text = config.Remetente };
         _campoPastaNfe = new TextBox { Dock = DockStyle.Fill, Text = config.PastaNfe };
         _campoPastaBoletos = new TextBox { Dock = DockStyle.Fill, Text = config.PastaBoletos };
+        _campoAssuntoModelo = new TextBox { Dock = DockStyle.Fill, Text = ModeloEmail.Assunto };
+        _campoCorpoModelo = new TextBox
+        {
+            Dock = DockStyle.Fill,
+            Multiline = true,
+            ScrollBars = ScrollBars.Vertical,
+            Text = ModeloEmail.Corpo,
+        };
 
         AdicionarTituloSecao(tabela, 0, "Servidor de e-mail (SMTP)");
         AdicionarLinha(tabela, 1, "Servidor:", _campoServidor);
@@ -66,6 +76,16 @@ public class AutoEmailConfigForm : Form
         AdicionarTituloSecao(tabela, 7, "Pastas dos arquivos");
         AdicionarLinha(tabela, 8, "Notas Fiscais:", CriarSeletorPasta(_campoPastaNfe));
         AdicionarLinha(tabela, 9, "Boletos:", CriarSeletorPasta(_campoPastaBoletos));
+        AdicionarTituloSecao(tabela, 10, "Modelo padrão do e-mail");
+        AdicionarLinha(tabela, 11, "Assunto:", _campoAssuntoModelo);
+        AdicionarLinhaAlta(tabela, 12, "Corpo:", _campoCorpoModelo, 90);
+        AdicionarLinha(tabela, 13, "", new Label
+        {
+            Text = ModeloEmail.Ajuda,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = Estilo.CorTextoSuave,
+        });
 
         _botaoTestar = Estilo.BotaoPadrao("Testar conexão");
         _botaoTestar.Click += async (_, _) => await TestarAsync();
@@ -84,8 +104,8 @@ public class AutoEmailConfigForm : Form
         painelBotoes.Controls.Add(botaoCancelar);
 
         tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-        tabela.Controls.Add(_botaoTestar, 0, 10);
-        tabela.Controls.Add(painelBotoes, 1, 10);
+        tabela.Controls.Add(_botaoTestar, 0, 14);
+        tabela.Controls.Add(painelBotoes, 1, 14);
 
         Controls.Add(tabela);
         AcceptButton = botaoSalvar;
@@ -115,6 +135,20 @@ public class AutoEmailConfigForm : Form
             Text = rotulo,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = Estilo.CorTextoSuave,
+        }, 0, linha);
+        tabela.Controls.Add(campo, 1, linha);
+    }
+
+    private static void AdicionarLinhaAlta(TableLayoutPanel tabela, int linha, string rotulo, Control campo, int altura)
+    {
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, altura));
+        tabela.Controls.Add(new Label
+        {
+            Text = rotulo,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.TopLeft,
+            Padding = new Padding(0, 4, 0, 0),
             ForeColor = Estilo.CorTextoSuave,
         }, 0, linha);
         tabela.Controls.Add(campo, 1, linha);
@@ -215,6 +249,8 @@ public class AutoEmailConfigForm : Form
         }
 
         config.Gravar();
+        ConfiguracaoRepository.Definir(ModeloEmail.ChaveAssunto, _campoAssuntoModelo.Text);
+        ConfiguracaoRepository.Definir(ModeloEmail.ChaveCorpo, _campoCorpoModelo.Text);
         DialogResult = DialogResult.OK;
         Close();
     }

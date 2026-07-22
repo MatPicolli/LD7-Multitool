@@ -116,7 +116,6 @@ public class EnviarEmailForm : Form
             Dock = DockStyle.Fill,
             Multiline = true,
             ScrollBars = ScrollBars.Vertical,
-            Text = "Olá,\r\n\r\nSegue(m) em anexo o(s) documento(s).\r\n\r\nAtenciosamente.",
         };
         AdicionarLinha(tabela, 5, "Mensagem:", _campoCorpo);
 
@@ -173,11 +172,11 @@ public class EnviarEmailForm : Form
 
         _aviso.Text = string.Join("   |   ", avisos);
 
-        _campoAssunto.Text = _opcaoNfe.Checked
-            ? $"NF-e — {_cadastro.Nome}"
-            : _opcaoNfeBoleto.Checked
-                ? $"NF-e e Boleto — {_cadastro.Nome}"
-                : $"Documentos — {_cadastro.Nome}";
+        var tipo = _opcaoNfe.Checked ? "NF-e"
+            : _opcaoNfeBoleto.Checked ? "NF-e e Boleto"
+            : "Documentos";
+        _campoAssunto.Text = ModeloEmail.AplicarAssunto(_cadastro.Nome, _cadastro.Codigo, tipo);
+        _campoCorpo.Text = ModeloEmail.AplicarCorpo(_cadastro.Nome, _cadastro.Codigo, tipo);
     }
 
     private void MontarAreaDropdowns(List<string> avisos)

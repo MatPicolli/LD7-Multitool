@@ -15,6 +15,8 @@ public class BoletosConfigForm : Form
 
     private readonly TextBox _campoPastaBoletos;
     private readonly TextBox _campoPastaNfe;
+    private readonly TextBox _campoAssuntoModelo;
+    private readonly TextBox _campoCorpoModelo;
 
     public BoletosConfigForm()
     {
@@ -25,7 +27,7 @@ public class BoletosConfigForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(580, 270);
+        ClientSize = new Size(580, 470);
 
         _campoPastaBoletos = new TextBox { Width = 440, Text = PastaPdfs };
         _campoPastaNfe = new TextBox { Width = 440, Text = PastaNfe };
@@ -62,6 +64,38 @@ public class BoletosConfigForm : Form
         botaoVincular.Location = new Point(16, 180);
         botaoVincular.Click += (_, _) => VincularExistentes();
 
+        var rotuloModelo = new Label
+        {
+            Text = "Modelo padrão do e-mail de boleto:",
+            AutoSize = true,
+            Font = new Font("Segoe UI Semibold", 10f),
+            ForeColor = Estilo.CorPrimaria,
+            Location = new Point(16, 224),
+        };
+        var rotuloAssunto = new Label { Text = "Assunto:", AutoSize = true, Location = new Point(16, 252) };
+        _campoAssuntoModelo = new TextBox
+        {
+            Location = new Point(90, 249),
+            Width = 470,
+            Text = ModeloEmailBoleto.Assunto,
+        };
+        var rotuloCorpo = new Label { Text = "Corpo:", AutoSize = true, Location = new Point(16, 282) };
+        _campoCorpoModelo = new TextBox
+        {
+            Location = new Point(90, 282),
+            Size = new Size(470, 90),
+            Multiline = true,
+            ScrollBars = ScrollBars.Vertical,
+            Text = ModeloEmailBoleto.Corpo,
+        };
+        var rotuloAjuda = new Label
+        {
+            Text = ModeloEmailBoleto.Ajuda,
+            AutoSize = true,
+            ForeColor = Estilo.CorTextoSuave,
+            Location = new Point(90, 378),
+        };
+
         var botaoSalvar = Estilo.BotaoPrimario("Salvar");
         var botaoCancelar = Estilo.BotaoPadrao("Cancelar");
         botaoCancelar.DialogResult = DialogResult.Cancel;
@@ -85,6 +119,12 @@ public class BoletosConfigForm : Form
         Controls.Add(botaoProcurarNfe);
         Controls.Add(rotuloVincular);
         Controls.Add(botaoVincular);
+        Controls.Add(rotuloModelo);
+        Controls.Add(rotuloAssunto);
+        Controls.Add(_campoAssuntoModelo);
+        Controls.Add(rotuloCorpo);
+        Controls.Add(_campoCorpoModelo);
+        Controls.Add(rotuloAjuda);
         Controls.Add(painelBotoes);
 
         AcceptButton = botaoSalvar;
@@ -154,6 +194,8 @@ public class BoletosConfigForm : Form
 
         ConfiguracaoRepository.Definir(ChavePastaPdfs, pastaBoletos);
         ConfiguracaoRepository.Definir(ChavePastaNfe, pastaNfe);
+        ConfiguracaoRepository.Definir(ModeloEmailBoleto.ChaveAssunto, _campoAssuntoModelo.Text);
+        ConfiguracaoRepository.Definir(ModeloEmailBoleto.ChaveCorpo, _campoCorpoModelo.Text);
         DialogResult = DialogResult.OK;
         Close();
     }

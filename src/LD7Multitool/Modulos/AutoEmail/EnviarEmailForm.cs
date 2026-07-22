@@ -250,6 +250,8 @@ public class EnviarEmailForm : Form
         {
             await EnvioEmailService.EnviarAsync(
                 _config, _cadastro.Destinatarios, _campoAssunto.Text, _campoCorpo.Text, arquivos);
+            HistoricoEmailRepository.Registrar(
+                _cadastro.Destinatarios, _campoAssunto.Text, arquivos.Count);
             MessageBox.Show(this,
                 $"E-mail enviado para {_cadastro.Destinatarios.Count} destinatário(s)!",
                 "Envio concluído", MessageBoxButtons.OK, MessageBoxIcon.Information);

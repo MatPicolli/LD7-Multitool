@@ -13,6 +13,7 @@ public class AutoEmailControl : UserControl
     private readonly TextBox _campoPesquisa;
     private readonly ListBox _listaCadastros;
     private readonly TextBox _detalhes;
+    private readonly ListBox _historico;
     private List<CadastroEmail> _todos = new();
     private List<CadastroEmail> _filtrados = new();
 
@@ -104,10 +105,57 @@ public class AutoEmailControl : UserControl
         divisao.Panel2.BackColor = Estilo.CorSuperficie;
         divisao.Panel2.Controls.Add(_detalhes);
 
+        // --- Histórico de e-mails enviados ---------------------------------
+        _historico = new ListBox
+        {
+            Dock = DockStyle.Fill,
+            BorderStyle = BorderStyle.None,
+            BackColor = Estilo.CorSuperficie,
+            ForeColor = Estilo.CorTextoSuave,
+            IntegralHeight = false,
+        };
+        var painelHistorico = new Panel
+        {
+            Dock = DockStyle.Bottom,
+            Height = 150,
+            BackColor = Estilo.CorSuperficie,
+            Padding = new Padding(12, 6, 12, 10),
+        };
+        painelHistorico.Paint += (_, e) =>
+            e.Graphics.DrawLine(new Pen(Estilo.CorBorda), 0, 0, painelHistorico.Width, 0);
+        painelHistorico.Controls.Add(_historico);
+        painelHistorico.Controls.Add(new Label
+        {
+            Text = "Últimos e-mails enviados",
+            Dock = DockStyle.Top,
+            Height = 24,
+            Font = new Font("Segoe UI Semibold", 9.75f),
+            ForeColor = Estilo.CorTexto,
+        });
+
+        // Ordem de docking: barra no topo, histórico no rodapé, divisão preenche.
         Controls.Add(divisao);
+        Controls.Add(painelHistorico);
         Controls.Add(barraSuperior);
 
+        // Atualiza o histórico ao voltar para a aba (ex.: após enviar um boleto).
+        VisibleChanged += (_, _) => { if (Visible) AtualizarHistorico(); };
+
         RecarregarDoBanco();
+        AtualizarHistorico();
+    }
+
+    private void AtualizarHistorico()
+    {
+        _historico.Items.Clear();
+        foreach (var email in HistoricoEmailRepository.ListarRecentes(20))
+        {
+            _historico.Items.Add(
+                $"{email.EnviadoEm:dd/MM/yyyy HH:mm}   ·   {email.Para}   ·   " +
+                $"{email.Assunto}   ({email.Anexos} anexo(s))");
+        }
+        if (_historico.Items.Count == 0)
+            _historico.Items.Add("(nenhum e-mail enviado ainda)");
     }
 
     private CadastroEmail? CadastroSelecionado =>
@@ -264,6 +312,7 @@ public class AutoEmailControl : UserControl
             return;
         }
         using var formulario = new EnviarEmailForm(cadastro);
-        formulario.ShowDialog(this);
+        if (formulario.ShowDialog(this) == DialogResult.OK)
+            AtualizarHistorico();
     }
 }

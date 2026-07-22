@@ -53,6 +53,14 @@ public static class Database
                 email      TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS historico_email (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                enviado_em TEXT NOT NULL,
+                para       TEXT NOT NULL,
+                assunto    TEXT NOT NULL DEFAULT '',
+                anexos     INTEGER NOT NULL DEFAULT 0
+            );
+
             CREATE TABLE IF NOT EXISTS boletos (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome            TEXT NOT NULL,

@@ -29,6 +29,10 @@ que envia um e-mail de teste para o próprio remetente) e as duas **pastas de
 arquivos** (Notas Fiscais e Boletos). A senha do SMTP é protegida com DPAPI
 (vinculada ao usuário do Windows) — nunca fica em texto puro no banco.
 
+A tela principal mostra ainda um **histórico dos últimos e-mails enviados**
+(data/hora, destinatários, assunto e quantidade de anexos), incluindo os
+enviados a partir do módulo de Boletos.
+
 > Dica: para Gmail, use uma [senha de app](https://support.google.com/accounts/answer/185833)
 > com servidor `smtp.gmail.com`, porta `587` e SSL/TLS habilitado.
 
@@ -39,13 +43,20 @@ Gerenciador de boletos com os campos:
 - Validade
 - Nosso número
 - NF-e referente
-- Estado: **Aberto**, **Pago** ou **Cancelado**
+- Estado: **Aberto**, **Pago**, **Cancelado** ou **Protestado**
 
 Recursos: **pesquisa** por nome, valor, validade, nosso número ou NF-e
 referente; filtro por estado; ordenação por qualquer coluna clicando no
 cabeçalho (validade ordena por data e valor por número, não pelo texto);
-atalhos "Marcar como pago" / "Cancelar boleto"; destaque de boletos vencidos
-(vermelho) e total em aberto no rodapé.
+atalhos "Marcar como pago" / "protestado" / "Cancelar boleto"; destaque por
+estado (pago em verde, protestado em lilás, cancelado em cinza) e boletos
+vencidos em vermelho; total em aberto no rodapé.
+
+**Alerta de vencimento:** boletos em aberto vencendo em até 2 dias (ou já
+vencidos) mostram um ícone ⚠ na coluna Validade. Clicando no ícone abre uma
+janela para **enviar o boleto por e-mail** — escolhendo um endereço já
+cadastrado (do Auto-Email) ou digitando um e-mail manualmente. O PDF vinculado
+ao boleto vai como anexo.
 
 **Importação de PDFs:** configure a pasta onde ficam os PDFs dos boletos no
 botão de engrenagem (⚙) e use **Importar boletos** — cada PDF novo da pasta é

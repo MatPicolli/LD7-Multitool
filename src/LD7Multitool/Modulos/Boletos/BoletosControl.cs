@@ -10,6 +10,9 @@ public class BoletosControl : UserControl
 {
     private static readonly CultureInfo CulturaBr = CultureInfo.GetCultureInfo("pt-BR");
 
+    // Largura (px) da zona clicável do ícone de alerta, no canto direito da célula.
+    private const int LarguraAlerta = 26;
+
     private readonly DataGridView _grade;
     private readonly ComboBox _filtroEstado;
     private readonly TextBox _campoPesquisa;
@@ -143,6 +146,35 @@ public class BoletosControl : UserControl
             if (e.RowIndex >= 0) Editar();
         };
 
+        // Desenha o ícone de alerta (⚠) à direita da data quando o boleto está
+        // a até 2 dias de vencer. SystemIcons.Warning é colorido e não depende
+        // de fonte de emoji.
+        _grade.CellPainting += (_, e) =>
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            if (_grade.Columns[e.ColumnIndex].Name != "validade") return;
+            if (_grade.Rows[e.RowIndex].Tag is not Boleto boleto || !boleto.AlertaVencimento) return;
+
+            e.Paint(e.CellBounds, DataGridViewPaintParts.All);
+            const int tamanho = 16;
+            var x = e.CellBounds.Right - LarguraAlerta + (LarguraAlerta - tamanho) / 2;
+            var y = e.CellBounds.Top + (e.CellBounds.Height - tamanho) / 2;
+            e.Graphics.DrawIcon(SystemIcons.Warning, new Rectangle(x, y, tamanho, tamanho));
+            e.Handled = true;
+        };
+
+        // Clicar no ícone de alerta abre o envio do boleto por e-mail.
+        _grade.CellMouseClick += (_, e) =>
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            if (_grade.Columns[e.ColumnIndex].Name != "validade") return;
+            if (_grade.Rows[e.RowIndex].Tag is not Boleto boleto || !boleto.AlertaVencimento) return;
+            if (e.Location.X < _grade.Columns[e.ColumnIndex].Width - LarguraAlerta) return;
+
+            _grade.Rows[e.RowIndex].Selected = true;
+            EnviarPorEmail();
+        };
+
         // Ordenação por clique no cabeçalho usando o valor real (não o texto):
         // validade compara datas e valor compara números, corrigindo o sort
         // que antes ordenava "dd/MM/yyyy" e "R$ x" como texto.
@@ -169,9 +201,11 @@ public class BoletosControl : UserControl
         var menuContexto = new ContextMenuStrip();
         menuContexto.Items.Add("Editar", null, (_, _) => Editar());
         menuContexto.Items.Add("Marcar como pago", null, (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Pago));
+        menuContexto.Items.Add("Marcar como protestado", null, (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Protestado));
         menuContexto.Items.Add("Cancelar boleto", null, (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Cancelado));
         menuContexto.Items.Add("Reabrir boleto", null, (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Aberto));
         menuContexto.Items.Add(new ToolStripSeparator());
+        menuContexto.Items.Add("Enviar por e-mail...", null, (_, _) => EnviarPorEmail());
         menuContexto.Items.Add("Abrir PDF", null, (_, _) => AbrirPdf());
         menuContexto.Items.Add("Excluir", null, (_, _) => Excluir());
         _grade.ContextMenuStrip = menuContexto;
@@ -238,10 +272,8 @@ public class BoletosControl : UserControl
 
             var linha = _grade.Rows[indice];
             linha.Tag = boleto;
-            if (boleto.Estado == EstadoBoleto.Pago)
-                linha.DefaultCellStyle.ForeColor = Color.FromArgb(30, 130, 76);
-            else if (boleto.Estado == EstadoBoleto.Cancelado)
-                linha.DefaultCellStyle.ForeColor = Estilo.CorTextoSuave;
+            if (boleto.Estado.CorTexto() is { } cor)
+                linha.DefaultCellStyle.ForeColor = cor;
             else if (boleto.Vencido)
                 linha.DefaultCellStyle.ForeColor = Estilo.CorPerigo;
         }
@@ -323,6 +355,14 @@ public class BoletosControl : UserControl
             return;
         BoletoRepository.AlterarEstado(boleto.Id, estado);
         Recarregar();
+    }
+
+    private void EnviarPorEmail()
+    {
+        if (BoletoSelecionado is not { } boleto)
+            return;
+        using var formulario = new EnviarBoletoForm(boleto);
+        formulario.ShowDialog(this);
     }
 
     private void AbrirConfiguracoes()

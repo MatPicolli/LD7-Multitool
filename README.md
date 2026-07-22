@@ -46,8 +46,10 @@ Gerenciador de boletos com os campos:
 - Estado: **Aberto**, **Pago**, **Cancelado** ou **Protestado**
 
 Recursos: **pesquisa** por nome, valor, validade, nosso número ou NF-e
-referente; filtro por estado; ordenação por qualquer coluna clicando no
-cabeçalho (validade ordena por data e valor por número, não pelo texto);
+referente; filtro por estado (o filtro **Aberto** também inclui os
+**Protestados**, por ainda serem dívidas em aberto; escolhendo **Protestado**
+mostra apenas esses); ordenação por qualquer coluna clicando no cabeçalho
+(validade ordena por data e valor por número, não pelo texto);
 atalhos "Marcar como pago" / "protestado" / "Cancelar boleto"; destaque por
 estado (pago em verde, protestado em lilás, cancelado em cinza) e boletos
 vencidos em vermelho; total em aberto no rodapé.

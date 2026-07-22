@@ -83,7 +83,7 @@ public class BoletosControl : UserControl
         foreach (EstadoBoleto estado in Enum.GetValues<EstadoBoleto>())
             _filtroEstado.Items.Add(estado.Descricao());
         _filtroEstado.SelectedIndex = 0;
-        _filtroEstado.SelectedIndexChanged += (_, _) => Recarregar();
+        _filtroEstado.SelectedIndexChanged += (_, _) => AtualizarGrade();
 
         var barraFiltro = new TableLayoutPanel
         {
@@ -141,6 +141,10 @@ public class BoletosControl : UserControl
         _grade.Columns["valor"]!.FillWeight = 55;
         _grade.Columns["validade"]!.FillWeight = 55;
         _grade.Columns["estado"]!.FillWeight = 50;
+
+        // Reserva um espaço fixo à direita da data para o ícone de alerta,
+        // presente ou não — assim a data nunca "dança" nem colide com o ícone.
+        _grade.Columns["validade"]!.DefaultCellStyle.Padding = new Padding(6, 0, LarguraAlerta, 0);
         _grade.CellDoubleClick += (_, e) =>
         {
             if (e.RowIndex >= 0) Editar();
@@ -237,26 +241,39 @@ public class BoletosControl : UserControl
         Recarregar();
     }
 
-    private EstadoBoleto? FiltroSelecionado =>
-        _filtroEstado.SelectedIndex <= 0 ? null : (EstadoBoleto)(_filtroEstado.SelectedIndex - 1);
-
     private Boleto? BoletoSelecionado =>
         _grade.SelectedRows.Count == 0 ? null : (Boleto)_grade.SelectedRows[0].Tag!;
 
-    /// <summary>Recarrega do banco (com o filtro de estado) e reaplica a pesquisa.</summary>
+    /// <summary>Recarrega todos os boletos do banco e reaplica filtro/pesquisa.</summary>
     private void Recarregar()
     {
-        _todos = BoletoRepository.Listar(FiltroSelecionado);
+        _todos = BoletoRepository.Listar();
         AtualizarGrade();
     }
 
-    /// <summary>Aplica o texto da pesquisa sobre a lista já carregada e repovoa a grade.</summary>
+    /// <summary>Decide se um boleto passa pelo filtro de estado selecionado.</summary>
+    private bool PassaFiltroEstado(Boleto boleto)
+    {
+        // Índice 0 = "Todos"; os demais seguem a ordem do enum.
+        if (_filtroEstado.SelectedIndex <= 0)
+            return true;
+
+        var filtro = (EstadoBoleto)(_filtroEstado.SelectedIndex - 1);
+        // "Aberto" também mostra os protestados (ainda são dívidas em aberto);
+        // qualquer outro filtro mostra somente o estado escolhido.
+        return filtro == EstadoBoleto.Aberto
+            ? boleto.Estado is EstadoBoleto.Aberto or EstadoBoleto.Protestado
+            : boleto.Estado == filtro;
+    }
+
+    /// <summary>Aplica o filtro de estado e a pesquisa sobre a lista carregada e repovoa a grade.</summary>
     private void AtualizarGrade()
     {
         var termo = Normalizar(_campoPesquisa.Text.Trim());
-        _visiveis = termo.Length == 0
-            ? _todos.ToList()
-            : _todos.Where(b => TextoPesquisavel(b).Contains(termo)).ToList();
+        _visiveis = _todos
+            .Where(PassaFiltroEstado)
+            .Where(b => termo.Length == 0 || TextoPesquisavel(b).Contains(termo))
+            .ToList();
 
         _grade.Rows.Clear();
         foreach (var boleto in _visiveis)

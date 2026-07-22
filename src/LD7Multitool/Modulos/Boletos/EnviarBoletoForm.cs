@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net.Mail;
+using System.Text;
 using LD7Multitool.Core;
 using LD7Multitool.Modulos.AutoEmail;
 
@@ -16,12 +17,15 @@ public class EnviarBoletoForm : Form
     private readonly Boleto _boleto;
     private readonly ConfigSmtp _config;
 
-    private readonly ComboBox _cadastrados;
+    private readonly TextBox _pesquisaCadastro;
+    private readonly ListBox _resultados;
     private readonly TextBox _campoManual;
     private readonly ListBox _destinatarios;
     private readonly TextBox _campoAssunto;
     private readonly TextBox _campoCorpo;
     private readonly Button _botaoEnviar;
+
+    private readonly List<ItemEmail> _todosEmails = new();
 
     public EnviarBoletoForm(Boleto boleto)
     {
@@ -32,25 +36,26 @@ public class EnviarBoletoForm : Form
         Font = Estilo.FontePadrao;
         BackColor = Estilo.CorSuperficie;
         StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(620, 560);
-        ClientSize = new Size(620, 560);
+        MinimumSize = new Size(640, 640);
+        ClientSize = new Size(640, 640);
 
         var tabela = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 7,
+            RowCount = 8,
             Padding = new Padding(16),
         };
         tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
         tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));   // boleto
         tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));   // anexo
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));   // cadastrado
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));   // manual
-        tabela.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // lista
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));   // assunto
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));   // mensagem
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));   // buscar cadastro
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 108));  // resultados
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));   // manual
+        tabela.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // destinatários
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));   // assunto
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));   // mensagem
 
         AdicionarLinha(tabela, 0, "Boleto:", new Label
         {
@@ -73,17 +78,43 @@ public class EnviarBoletoForm : Form
             AutoEllipsis = true,
         });
 
-        // --- Escolher entre cadastrados ------------------------------------
-        _cadastrados = new ComboBox
+        // --- Buscar entre cadastrados --------------------------------------
+        _pesquisaCadastro = new TextBox
         {
             Dock = DockStyle.Fill,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            FlatStyle = FlatStyle.Flat,
+            PlaceholderText = "Buscar cadastro por código ou nome...",
         };
-        CarregarCadastrados();
+        _pesquisaCadastro.TextChanged += (_, _) => FiltrarCadastros();
+        AdicionarLinha(tabela, 2, "Buscar:", _pesquisaCadastro);
+
+        _resultados = new ListBox { Dock = DockStyle.Fill };
+        _resultados.DoubleClick += (_, _) => AdicionarCadastradoSelecionado();
         var botaoAddCadastrado = Estilo.BotaoPadrao("Adicionar");
-        botaoAddCadastrado.Click += (_, _) => AdicionarCadastrado();
-        AdicionarLinha(tabela, 2, "Cadastrado:", ComporCampoBotao(_cadastrados, botaoAddCadastrado));
+        botaoAddCadastrado.Click += (_, _) => AdicionarCadastradoSelecionado();
+
+        var painelResultados = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = new Padding(0),
+        };
+        painelResultados.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        painelResultados.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        painelResultados.Controls.Add(_resultados, 0, 0);
+        var barraAdd = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0) };
+        barraAdd.Controls.Add(botaoAddCadastrado);
+        barraAdd.Controls.Add(new Label
+        {
+            Text = "(ou dê dois cliques no resultado)",
+            AutoSize = true,
+            ForeColor = Estilo.CorTextoSuave,
+            Margin = new Padding(8, 9, 0, 0),
+        });
+        painelResultados.Controls.Add(barraAdd, 0, 1);
+        AdicionarLinha(tabela, 3, "", painelResultados);
+
+        CarregarCadastrados();
 
         // --- E-mail manual -------------------------------------------------
         _campoManual = new TextBox { Dock = DockStyle.Fill, PlaceholderText = "outro@email.com" };
@@ -93,7 +124,7 @@ public class EnviarBoletoForm : Form
         };
         var botaoAddManual = Estilo.BotaoPadrao("Adicionar");
         botaoAddManual.Click += (_, _) => AdicionarManual();
-        AdicionarLinha(tabela, 3, "Manual:", ComporCampoBotao(_campoManual, botaoAddManual));
+        AdicionarLinha(tabela, 4, "Manual:", ComporCampoBotao(_campoManual, botaoAddManual));
 
         // --- Lista de destinatários ----------------------------------------
         _destinatarios = new ListBox { Dock = DockStyle.Fill };
@@ -111,12 +142,12 @@ public class EnviarBoletoForm : Form
             Margin = new Padding(0),
         };
         painelLista.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        painelLista.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        painelLista.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         painelLista.Controls.Add(_destinatarios, 0, 0);
         var barraRemover = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0) };
         barraRemover.Controls.Add(botaoRemover);
         painelLista.Controls.Add(barraRemover, 0, 1);
-        AdicionarLinha(tabela, 4, "Enviar para:", painelLista);
+        AdicionarLinha(tabela, 5, "Enviar para:", painelLista);
 
         // --- Assunto e mensagem --------------------------------------------
         _campoAssunto = new TextBox
@@ -124,7 +155,7 @@ public class EnviarBoletoForm : Form
             Dock = DockStyle.Fill,
             Text = $"Boleto — {_boleto.Nome} (venc. {_boleto.Validade:dd/MM/yyyy})",
         };
-        AdicionarLinha(tabela, 5, "Assunto:", _campoAssunto);
+        AdicionarLinha(tabela, 6, "Assunto:", _campoAssunto);
 
         _campoCorpo = new TextBox
         {
@@ -133,7 +164,7 @@ public class EnviarBoletoForm : Form
             ScrollBars = ScrollBars.Vertical,
             Text = "Olá,\r\n\r\nSegue em anexo o boleto.\r\n\r\nAtenciosamente.",
         };
-        AdicionarLinha(tabela, 6, "Mensagem:", _campoCorpo);
+        AdicionarLinha(tabela, 7, "Mensagem:", _campoCorpo);
 
         // --- Botões --------------------------------------------------------
         _botaoEnviar = Estilo.BotaoPrimario("Enviar");
@@ -189,20 +220,54 @@ public class EnviarBoletoForm : Form
 
     private void CarregarCadastrados()
     {
-        // Cada e-mail cadastrado vira um item "email — nome (código)".
+        // Cada e-mail cadastrado vira um item pesquisável por código e nome.
         foreach (var cadastro in CadastroEmailRepository.Listar())
         {
             foreach (var email in cadastro.Destinatarios)
-                _cadastrados.Items.Add(new ItemEmail(email, $"{email} — {cadastro.Nome} ({cadastro.Codigo})"));
+            {
+                _todosEmails.Add(new ItemEmail(
+                    Email: email,
+                    Rotulo: $"{email} — {cadastro.Nome} ({cadastro.Codigo})",
+                    Filtro: Normalizar($"{cadastro.Codigo} {cadastro.Nome} {email}")));
+            }
         }
-        if (_cadastrados.Items.Count > 0)
-            _cadastrados.SelectedIndex = 0;
+        FiltrarCadastros();
     }
 
-    private void AdicionarCadastrado()
+    private void FiltrarCadastros()
     {
-        if (_cadastrados.SelectedItem is ItemEmail item)
+        var termo = Normalizar(_pesquisaCadastro.Text.Trim());
+        var itens = termo.Length == 0
+            ? _todosEmails
+            : _todosEmails.Where(i => i.Filtro.Contains(termo));
+
+        _resultados.BeginUpdate();
+        _resultados.Items.Clear();
+        foreach (var item in itens)
+            _resultados.Items.Add(item);
+        _resultados.EndUpdate();
+
+        if (_resultados.Items.Count > 0)
+            _resultados.SelectedIndex = 0;
+    }
+
+    private void AdicionarCadastradoSelecionado()
+    {
+        if (_resultados.SelectedItem is ItemEmail item)
             AdicionarDestinatario(item.Email);
+    }
+
+    /// <summary>Minúsculas e sem acentos, para uma busca tolerante.</summary>
+    private static string Normalizar(string texto)
+    {
+        var decomposto = texto.Normalize(NormalizationForm.FormD);
+        var construtor = new StringBuilder(decomposto.Length);
+        foreach (var caractere in decomposto)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(caractere) != UnicodeCategory.NonSpacingMark)
+                construtor.Append(char.ToLowerInvariant(caractere));
+        }
+        return construtor.ToString();
     }
 
     private void AdicionarManual()
@@ -269,8 +334,8 @@ public class EnviarBoletoForm : Form
         }
     }
 
-    /// <summary>Item do combo de cadastrados: guarda o e-mail e exibe o rótulo.</summary>
-    private sealed record ItemEmail(string Email, string Rotulo)
+    /// <summary>Item da busca de cadastrados: e-mail, rótulo exibido e texto de filtro.</summary>
+    private sealed record ItemEmail(string Email, string Rotulo, string Filtro)
     {
         public override string ToString() => Rotulo;
     }

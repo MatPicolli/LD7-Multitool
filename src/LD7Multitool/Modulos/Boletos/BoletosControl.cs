@@ -344,7 +344,7 @@ public class BoletosControl : UserControl
             UseWaitCursor = true;
             try
             {
-                VincularNfe(formulario.Boleto, LeitorNfePdf.IndexarPasta(BoletosConfigForm.PastaNfe));
+                VinculadorNfe.Vincular(formulario.Boleto, LeitorNfePdf.IndexarPasta(BoletosConfigForm.PastaNfe));
             }
             finally
             {
@@ -367,15 +367,6 @@ public class BoletosControl : UserControl
         Recarregar();
     }
 
-    /// <summary>Vincula a NF-e cujo número bate com o "NF-e referente" do boleto.</summary>
-    private static void VincularNfe(Boleto boleto, Dictionary<string, string> indiceNfe)
-    {
-        if (boleto.NfeReferente.Length == 0 || indiceNfe.Count == 0)
-            return;
-        var numero = LeitorNfePdf.Normalizar(boleto.NfeReferente);
-        if (numero.Length > 0 && indiceNfe.TryGetValue(numero, out var caminho))
-            boleto.CaminhoNfe = caminho;
-    }
 
     private void Excluir()
     {
@@ -412,6 +403,8 @@ public class BoletosControl : UserControl
     {
         using var formulario = new BoletosConfigForm();
         formulario.ShowDialog(this);
+        // O diálogo pode ter vinculado NF-es em massa; reflete na grade.
+        Recarregar();
     }
 
     private void Importar()
@@ -438,7 +431,7 @@ public class BoletosControl : UserControl
             // Índice da pasta de NF-e montado uma única vez para todos os boletos.
             var indiceNfe = LeitorNfePdf.IndexarPasta(BoletosConfigForm.PastaNfe);
             foreach (var boleto in formulario.BoletosImportados)
-                VincularNfe(boleto, indiceNfe);
+                VinculadorNfe.Vincular(boleto, indiceNfe);
             vinculadas = formulario.BoletosImportados.Count(b => b.CaminhoNfe.Length > 0);
 
             foreach (var boleto in formulario.BoletosImportados)

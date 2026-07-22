@@ -59,7 +59,10 @@ vencidos em vermelho; total em aberto no rodapé.
 **Vínculo automático de NF-e:** nas configurações (⚙) há também a pasta das
 Notas Fiscais. Ao cadastrar (novo ou importado) um boleto, o programa lê os
 PDFs de NF-e e vincula automaticamente aquele cujo número (lido do topo do
-DANFE, "Nº ...") bate com o "NF-e referente" do boleto.
+DANFE, "Nº ...") bate com o "NF-e referente" do boleto. Para vincular os
+boletos que **já estavam cadastrados** antes, use o botão **"Vincular NF-es
+agora"** nas configurações (⚙) — ele varre a pasta e liga todos os que ainda
+não têm NF-e.
 
 **Alerta de vencimento:** boletos em aberto vencendo em até 2 dias (ou já
 vencidos) mostram um ícone ⚠ na coluna Vencimento. Clicando no ícone abre uma

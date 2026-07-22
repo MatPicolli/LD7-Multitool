@@ -25,7 +25,7 @@ public class BoletosConfigForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(580, 210);
+        ClientSize = new Size(580, 270);
 
         _campoPastaBoletos = new TextBox { Width = 440, Text = PastaPdfs };
         _campoPastaNfe = new TextBox { Width = 440, Text = PastaNfe };
@@ -52,6 +52,16 @@ public class BoletosConfigForm : Form
         botaoProcurarNfe.Location = new Point(464, 108);
         botaoProcurarNfe.Click += (_, _) => Procurar(_campoPastaNfe, "Notas Fiscais");
 
+        var rotuloVincular = new Label
+        {
+            Text = "Vincular NF-es aos boletos já cadastrados (pelo número da NF-e):",
+            AutoSize = true,
+            Location = new Point(16, 156),
+        };
+        var botaoVincular = Estilo.BotaoPadrao("Vincular NF-es agora");
+        botaoVincular.Location = new Point(16, 180);
+        botaoVincular.Click += (_, _) => VincularExistentes();
+
         var botaoSalvar = Estilo.BotaoPrimario("Salvar");
         var botaoCancelar = Estilo.BotaoPadrao("Cancelar");
         botaoCancelar.DialogResult = DialogResult.Cancel;
@@ -73,6 +83,8 @@ public class BoletosConfigForm : Form
         Controls.Add(rotuloNfe);
         Controls.Add(_campoPastaNfe);
         Controls.Add(botaoProcurarNfe);
+        Controls.Add(rotuloVincular);
+        Controls.Add(botaoVincular);
         Controls.Add(painelBotoes);
 
         AcceptButton = botaoSalvar;
@@ -89,6 +101,37 @@ public class BoletosConfigForm : Form
         };
         if (dialogo.ShowDialog(this) == DialogResult.OK)
             campo.Text = dialogo.SelectedPath;
+    }
+
+    private void VincularExistentes()
+    {
+        var pastaNfe = _campoPastaNfe.Text.Trim();
+        if (pastaNfe.Length == 0 || !Directory.Exists(pastaNfe))
+        {
+            MessageBox.Show(this,
+                "Informe uma pasta de Notas Fiscais válida antes de vincular.",
+                "Pasta de NF-e", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        // Grava a pasta para que fique valendo daqui em diante.
+        ConfiguracaoRepository.Definir(ChavePastaNfe, pastaNfe);
+
+        UseWaitCursor = true;
+        int vinculados;
+        try
+        {
+            vinculados = VinculadorNfe.VincularExistentes(pastaNfe);
+        }
+        finally
+        {
+            UseWaitCursor = false;
+        }
+
+        MessageBox.Show(this,
+            $"{vinculados} boleto(s) vinculado(s) à NF-e correspondente.\n" +
+            "(Boletos que já tinham NF-e ou sem número correspondente na pasta não são alterados.)",
+            "Vínculo concluído", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void Salvar()

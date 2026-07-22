@@ -84,6 +84,16 @@ public static class BoletoRepository
         comando.ExecuteNonQuery();
     }
 
+    public static void AtualizarCaminhoNfe(long id, string caminho)
+    {
+        using var conexao = Database.AbrirConexao();
+        using var comando = conexao.CreateCommand();
+        comando.CommandText = "UPDATE boletos SET caminho_nfe = $caminho WHERE id = $id";
+        comando.Parameters.AddWithValue("$caminho", caminho);
+        comando.Parameters.AddWithValue("$id", id);
+        comando.ExecuteNonQuery();
+    }
+
     private static void PreencherParametros(SqliteCommand comando, Boleto boleto)
     {
         comando.Parameters.AddWithValue("$nome", boleto.Nome);

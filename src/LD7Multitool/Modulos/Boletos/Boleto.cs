@@ -42,6 +42,9 @@ public class Boleto
     /// <summary>Caminho do PDF do boleto (vazio se não houver arquivo vinculado).</summary>
     public string CaminhoArquivo { get; set; } = "";
 
+    /// <summary>Caminho do PDF da NF-e referente, vinculado pelo número (vazio se não houver).</summary>
+    public string CaminhoNfe { get; set; } = "";
+
     public bool Vencido => Estado == EstadoBoleto.Aberto && Validade.Date < DateTime.Today;
 
     /// <summary>Boleto em aberto vencendo em até 2 dias (ou já vencido) — merece alerta.</summary>

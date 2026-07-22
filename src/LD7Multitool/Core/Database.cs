@@ -69,7 +69,8 @@ public static class Database
                 nosso_numero    TEXT NOT NULL DEFAULT '',
                 nfe_referente   TEXT NOT NULL DEFAULT '',
                 estado          INTEGER NOT NULL DEFAULT 0,
-                caminho_arquivo TEXT NOT NULL DEFAULT ''
+                caminho_arquivo TEXT NOT NULL DEFAULT '',
+                caminho_nfe     TEXT NOT NULL DEFAULT ''
             );
             """;
         comando.ExecuteNonQuery();
@@ -77,6 +78,8 @@ public static class Database
         // Migrações de bancos criados por versões anteriores.
         AdicionarColunaSeFaltar(conexao, "boletos", "caminho_arquivo",
             "ALTER TABLE boletos ADD COLUMN caminho_arquivo TEXT NOT NULL DEFAULT ''");
+        AdicionarColunaSeFaltar(conexao, "boletos", "caminho_nfe",
+            "ALTER TABLE boletos ADD COLUMN caminho_nfe TEXT NOT NULL DEFAULT ''");
         AdicionarColunaSeFaltar(conexao, "cadastros_email", "codigo",
             "ALTER TABLE cadastros_email ADD COLUMN codigo TEXT NOT NULL DEFAULT ''");
 

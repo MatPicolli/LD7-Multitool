@@ -2,14 +2,19 @@ using LD7Multitool.Core;
 
 namespace LD7Multitool.Modulos.Boletos;
 
-/// <summary>Configurações do módulo Boletos (pasta onde ficam os PDFs).</summary>
+/// <summary>Configurações do módulo Boletos (pastas dos PDFs de boletos e NF-e).</summary>
 public class BoletosConfigForm : Form
 {
     public const string ChavePastaPdfs = "boletos_pasta_pdfs";
 
-    public static string PastaPdfs => ConfiguracaoRepository.Obter(ChavePastaPdfs) ?? "";
+    // Mesma chave usada pelo Auto-Email: a pasta de NF-e é única no programa.
+    public const string ChavePastaNfe = "autoemail_pasta_nfe";
 
-    private readonly TextBox _campoPasta;
+    public static string PastaPdfs => ConfiguracaoRepository.Obter(ChavePastaPdfs) ?? "";
+    public static string PastaNfe => ConfiguracaoRepository.Obter(ChavePastaNfe) ?? "";
+
+    private readonly TextBox _campoPastaBoletos;
+    private readonly TextBox _campoPastaNfe;
 
     public BoletosConfigForm()
     {
@@ -20,25 +25,32 @@ public class BoletosConfigForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(560, 150);
+        ClientSize = new Size(580, 210);
 
-        var rotulo = new Label
+        _campoPastaBoletos = new TextBox { Width = 440, Text = PastaPdfs };
+        _campoPastaNfe = new TextBox { Width = 440, Text = PastaNfe };
+
+        var rotuloBoletos = new Label
         {
             Text = "Pasta com os PDFs dos boletos:",
             AutoSize = true,
             Location = new Point(16, 16),
         };
+        _campoPastaBoletos.Location = new Point(16, 42);
+        var botaoProcurarBoletos = Estilo.BotaoPadrao("Procurar...");
+        botaoProcurarBoletos.Location = new Point(464, 40);
+        botaoProcurarBoletos.Click += (_, _) => Procurar(_campoPastaBoletos, "boletos");
 
-        _campoPasta = new TextBox
+        var rotuloNfe = new Label
         {
-            Location = new Point(16, 44),
-            Width = 430,
-            Text = PastaPdfs,
+            Text = "Pasta com os PDFs das Notas Fiscais (NF-e):",
+            AutoSize = true,
+            Location = new Point(16, 84),
         };
-
-        var botaoProcurar = Estilo.BotaoPadrao("Procurar...");
-        botaoProcurar.Location = new Point(454, 42);
-        botaoProcurar.Click += (_, _) => Procurar();
+        _campoPastaNfe.Location = new Point(16, 110);
+        var botaoProcurarNfe = Estilo.BotaoPadrao("Procurar...");
+        botaoProcurarNfe.Location = new Point(464, 108);
+        botaoProcurarNfe.Click += (_, _) => Procurar(_campoPastaNfe, "Notas Fiscais");
 
         var botaoSalvar = Estilo.BotaoPrimario("Salvar");
         var botaoCancelar = Estilo.BotaoPadrao("Cancelar");
@@ -55,38 +67,50 @@ public class BoletosConfigForm : Form
         painelBotoes.Controls.Add(botaoSalvar);
         painelBotoes.Controls.Add(botaoCancelar);
 
-        Controls.Add(rotulo);
-        Controls.Add(_campoPasta);
-        Controls.Add(botaoProcurar);
+        Controls.Add(rotuloBoletos);
+        Controls.Add(_campoPastaBoletos);
+        Controls.Add(botaoProcurarBoletos);
+        Controls.Add(rotuloNfe);
+        Controls.Add(_campoPastaNfe);
+        Controls.Add(botaoProcurarNfe);
         Controls.Add(painelBotoes);
 
         AcceptButton = botaoSalvar;
         CancelButton = botaoCancelar;
     }
 
-    private void Procurar()
+    private void Procurar(TextBox campo, string oQue)
     {
         using var dialogo = new FolderBrowserDialog
         {
-            Description = "Selecione a pasta com os PDFs dos boletos",
+            Description = $"Selecione a pasta com os PDFs de {oQue}",
             UseDescriptionForTitle = true,
-            SelectedPath = Directory.Exists(_campoPasta.Text) ? _campoPasta.Text : "",
+            SelectedPath = Directory.Exists(campo.Text) ? campo.Text : "",
         };
         if (dialogo.ShowDialog(this) == DialogResult.OK)
-            _campoPasta.Text = dialogo.SelectedPath;
+            campo.Text = dialogo.SelectedPath;
     }
 
     private void Salvar()
     {
-        var pasta = _campoPasta.Text.Trim();
-        if (pasta.Length > 0 && !Directory.Exists(pasta))
+        var pastaBoletos = _campoPastaBoletos.Text.Trim();
+        var pastaNfe = _campoPastaNfe.Text.Trim();
+
+        if (pastaBoletos.Length > 0 && !Directory.Exists(pastaBoletos))
         {
-            MessageBox.Show(this, "A pasta informada não existe.", "Pasta inválida",
+            MessageBox.Show(this, "A pasta de boletos informada não existe.", "Pasta inválida",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        if (pastaNfe.Length > 0 && !Directory.Exists(pastaNfe))
+        {
+            MessageBox.Show(this, "A pasta de Notas Fiscais informada não existe.", "Pasta inválida",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        ConfiguracaoRepository.Definir(ChavePastaPdfs, pasta);
+        ConfiguracaoRepository.Definir(ChavePastaPdfs, pastaBoletos);
+        ConfiguracaoRepository.Definir(ChavePastaNfe, pastaNfe);
         DialogResult = DialogResult.OK;
         Close();
     }

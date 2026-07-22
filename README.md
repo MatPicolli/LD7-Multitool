@@ -17,10 +17,12 @@ e-mails**. Na hora de enviar:
 1. Pesquise o cliente por nome ou código (busca tolerante/fuzzy — aceita
    trechos e letras fora de sequência, sem acentos);
 2. Escolha o que mandar:
-   - **NF-e** — anexa o PDF mais recente da pasta de Notas Fiscais cujo nome
-     contém `Cliente-{código}` (formato `DANFE Cliente-0000 (dd-mm-aaaa).pdf`);
-   - **NF-e e Boleto** — idem, pegando também o boleto mais recente da pasta
-     de Boletos (`BOLETO Cliente-0000 (dd-mm-aaaa).pdf`);
+   - **NF-e** — um dropdown lista **todos** os PDFs de NF-e do cliente
+     (`DANFE Cliente-0000 (dd-mm-aaaa).pdf`), com o mais recente já
+     selecionado; dá para escolher um documento mais antigo se quiser;
+   - **NF-e e Boleto** — dois dropdowns (NF-e e Boleto,
+     `BOLETO Cliente-0000 (dd-mm-aaaa).pdf`), cada um com o mais recente
+     pré-selecionado;
    - **Outro** — você escolhe os arquivos manualmente;
 3. Confira anexos, assunto e mensagem, e clique em Enviar.
 
@@ -54,11 +56,18 @@ atalhos "Marcar como pago" / "protestado" / "Cancelar boleto"; destaque por
 estado (pago em verde, protestado em lilás, cancelado em cinza) e boletos
 vencidos em vermelho; total em aberto no rodapé.
 
+**Vínculo automático de NF-e:** nas configurações (⚙) há também a pasta das
+Notas Fiscais. Ao cadastrar (novo ou importado) um boleto, o programa lê os
+PDFs de NF-e e vincula automaticamente aquele cujo número (lido do topo do
+DANFE, "Nº ...") bate com o "NF-e referente" do boleto.
+
 **Alerta de vencimento:** boletos em aberto vencendo em até 2 dias (ou já
-vencidos) mostram um ícone ⚠ na coluna Validade. Clicando no ícone abre uma
+vencidos) mostram um ícone ⚠ na coluna Vencimento. Clicando no ícone abre uma
 janela para **enviar o boleto por e-mail** — escolhendo um endereço já
-cadastrado (do Auto-Email) ou digitando um e-mail manualmente. O PDF vinculado
-ao boleto vai como anexo.
+cadastrado (buscável por código ou nome) ou digitando um e-mail manualmente.
+O PDF do boleto vai como anexo e, se houver uma **NF-e vinculada**, há a opção
+de anexá-la junto. Pelo menu de clique-direito dá para abrir o PDF do boleto
+ou a NF-e vinculada.
 
 **Importação de PDFs:** configure a pasta onde ficam os PDFs dos boletos no
 botão de engrenagem (⚙) e use **Importar boletos** — cada PDF novo da pasta é

@@ -21,6 +21,7 @@ public class EnviarBoletoForm : Form
     private readonly ListBox _resultados;
     private readonly TextBox _campoManual;
     private readonly ListBox _destinatarios;
+    private readonly CheckBox _anexarNfe;
     private readonly TextBox _campoAssunto;
     private readonly TextBox _campoCorpo;
     private readonly Button _botaoEnviar;
@@ -49,7 +50,7 @@ public class EnviarBoletoForm : Form
         tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
         tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));   // boleto
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));   // anexo
+        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));   // anexos
         tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));   // buscar cadastro
         tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 108));  // resultados
         tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));   // manual
@@ -67,16 +68,36 @@ public class EnviarBoletoForm : Form
         });
 
         var temPdf = _boleto.CaminhoArquivo.Length > 0 && File.Exists(_boleto.CaminhoArquivo);
-        AdicionarLinha(tabela, 1, "Anexo:", new Label
+        var painelAnexos = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Padding = new Padding(0, 4, 0, 0),
+        };
+        painelAnexos.Controls.Add(new Label
         {
             Text = temPdf
-                ? Path.GetFileName(_boleto.CaminhoArquivo)
-                : "(sem PDF vinculado — o e-mail irá sem anexo)",
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
+                ? "Boleto: " + Path.GetFileName(_boleto.CaminhoArquivo)
+                : "(sem PDF de boleto vinculado — irá sem esse anexo)",
+            AutoSize = true,
             ForeColor = temPdf ? Estilo.CorTexto : Estilo.CorPerigo,
-            AutoEllipsis = true,
         });
+
+        var temNfe = _boleto.CaminhoNfe.Length > 0 && File.Exists(_boleto.CaminhoNfe);
+        _anexarNfe = new CheckBox
+        {
+            AutoSize = true,
+            Checked = temNfe,
+            Enabled = temNfe,
+            Text = temNfe
+                ? "Anexar também a NF-e: " + Path.GetFileName(_boleto.CaminhoNfe)
+                : "Anexar também a NF-e referente (nenhuma vinculada)",
+            ForeColor = temNfe ? Estilo.CorTexto : Estilo.CorTextoSuave,
+            Margin = new Padding(0, 2, 0, 0),
+        };
+        painelAnexos.Controls.Add(_anexarNfe);
+        AdicionarLinha(tabela, 1, "Anexos:", painelAnexos);
 
         // --- Buscar entre cadastrados --------------------------------------
         _pesquisaCadastro = new TextBox
@@ -309,6 +330,8 @@ public class EnviarBoletoForm : Form
         var anexos = new List<string>();
         if (_boleto.CaminhoArquivo.Length > 0 && File.Exists(_boleto.CaminhoArquivo))
             anexos.Add(_boleto.CaminhoArquivo);
+        if (_anexarNfe.Checked && File.Exists(_boleto.CaminhoNfe))
+            anexos.Add(_boleto.CaminhoNfe);
 
         _botaoEnviar.Enabled = false;
         UseWaitCursor = true;

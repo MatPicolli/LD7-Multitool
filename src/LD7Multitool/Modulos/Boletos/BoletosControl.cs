@@ -210,7 +210,8 @@ public class BoletosControl : UserControl
         menuContexto.Items.Add("Reabrir boleto", null, (_, _) => AlterarEstadoSelecionado(EstadoBoleto.Aberto));
         menuContexto.Items.Add(new ToolStripSeparator());
         menuContexto.Items.Add("Enviar por e-mail...", null, (_, _) => EnviarPorEmail());
-        menuContexto.Items.Add("Abrir PDF", null, (_, _) => AbrirPdf());
+        menuContexto.Items.Add("Abrir PDF do boleto", null, (_, _) => AbrirPdf());
+        menuContexto.Items.Add("Abrir NF-e vinculada", null, (_, _) => AbrirNfe());
         menuContexto.Items.Add("Excluir", null, (_, _) => Excluir());
         _grade.ContextMenuStrip = menuContexto;
         _grade.CellMouseDown += (_, e) =>
@@ -336,6 +337,21 @@ public class BoletosControl : UserControl
         using var formulario = new BoletoForm();
         if (formulario.ShowDialog(this) != DialogResult.OK)
             return;
+
+        // Só vale a pena varrer a pasta de NF-e se ainda não há uma vinculada.
+        if (formulario.Boleto.CaminhoNfe.Length == 0)
+        {
+            UseWaitCursor = true;
+            try
+            {
+                VincularNfe(formulario.Boleto, LeitorNfePdf.IndexarPasta(BoletosConfigForm.PastaNfe));
+            }
+            finally
+            {
+                UseWaitCursor = false;
+            }
+        }
+
         BoletoRepository.Inserir(formulario.Boleto);
         Recarregar();
     }
@@ -349,6 +365,16 @@ public class BoletosControl : UserControl
             return;
         BoletoRepository.Atualizar(formulario.Boleto);
         Recarregar();
+    }
+
+    /// <summary>Vincula a NF-e cujo número bate com o "NF-e referente" do boleto.</summary>
+    private static void VincularNfe(Boleto boleto, Dictionary<string, string> indiceNfe)
+    {
+        if (boleto.NfeReferente.Length == 0 || indiceNfe.Count == 0)
+            return;
+        var numero = LeitorNfePdf.Normalizar(boleto.NfeReferente);
+        if (numero.Length > 0 && indiceNfe.TryGetValue(numero, out var caminho))
+            boleto.CaminhoNfe = caminho;
     }
 
     private void Excluir()
@@ -405,12 +431,28 @@ public class BoletosControl : UserControl
         if (formulario.ShowDialog(this) != DialogResult.OK)
             return;
 
-        foreach (var boleto in formulario.BoletosImportados)
-            BoletoRepository.Inserir(boleto);
+        UseWaitCursor = true;
+        int vinculadas;
+        try
+        {
+            // Índice da pasta de NF-e montado uma única vez para todos os boletos.
+            var indiceNfe = LeitorNfePdf.IndexarPasta(BoletosConfigForm.PastaNfe);
+            foreach (var boleto in formulario.BoletosImportados)
+                VincularNfe(boleto, indiceNfe);
+            vinculadas = formulario.BoletosImportados.Count(b => b.CaminhoNfe.Length > 0);
+
+            foreach (var boleto in formulario.BoletosImportados)
+                BoletoRepository.Inserir(boleto);
+        }
+        finally
+        {
+            UseWaitCursor = false;
+        }
         Recarregar();
 
         MessageBox.Show(this,
-            $"{formulario.BoletosImportados.Count} boleto(s) importado(s).\n" +
+            $"{formulario.BoletosImportados.Count} boleto(s) importado(s) " +
+            $"({vinculadas} com NF-e vinculada).\n" +
             "Os dados foram lidos automaticamente dos PDFs — confira e, se " +
             "algum campo ficou em branco, complete com dois cliques no boleto.",
             "Importação concluída",
@@ -419,22 +461,32 @@ public class BoletosControl : UserControl
 
     private void AbrirPdf()
     {
-        if (BoletoSelecionado is not { } boleto)
-            return;
-        if (boleto.CaminhoArquivo.Length == 0)
+        if (BoletoSelecionado is { } boleto)
+            AbrirArquivo(boleto.CaminhoArquivo, "Este boleto não tem um PDF vinculado.");
+    }
+
+    private void AbrirNfe()
+    {
+        if (BoletoSelecionado is { } boleto)
+            AbrirArquivo(boleto.CaminhoNfe, "Este boleto não tem uma NF-e vinculada.");
+    }
+
+    private void AbrirArquivo(string caminho, string mensagemSemArquivo)
+    {
+        if (caminho.Length == 0)
         {
-            MessageBox.Show(this, "Este boleto não tem um PDF vinculado.", "Sem arquivo",
+            MessageBox.Show(this, mensagemSemArquivo, "Sem arquivo",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
-        if (!File.Exists(boleto.CaminhoArquivo))
+        if (!File.Exists(caminho))
         {
             MessageBox.Show(this,
-                "O arquivo não foi encontrado:\n" + boleto.CaminhoArquivo,
+                "O arquivo não foi encontrado:\n" + caminho,
                 "Arquivo não encontrado",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
-        Process.Start(new ProcessStartInfo(boleto.CaminhoArquivo) { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo(caminho) { UseShellExecute = true });
     }
 }

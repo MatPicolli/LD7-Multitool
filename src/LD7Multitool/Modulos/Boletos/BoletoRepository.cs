@@ -14,7 +14,7 @@ public static class BoletoRepository
         using var conexao = Database.AbrirConexao();
         using var comando = conexao.CreateCommand();
         comando.CommandText = """
-            SELECT id, nome, valor, validade, nosso_numero, nfe_referente, estado, caminho_arquivo
+            SELECT id, nome, valor, validade, nosso_numero, nfe_referente, estado, caminho_arquivo, caminho_nfe
             FROM boletos
             """;
         if (filtroEstado is not null)
@@ -36,8 +36,8 @@ public static class BoletoRepository
         using var conexao = Database.AbrirConexao();
         using var comando = conexao.CreateCommand();
         comando.CommandText = """
-            INSERT INTO boletos (nome, valor, validade, nosso_numero, nfe_referente, estado, caminho_arquivo)
-            VALUES ($nome, $valor, $validade, $nossoNumero, $nfeReferente, $estado, $caminhoArquivo)
+            INSERT INTO boletos (nome, valor, validade, nosso_numero, nfe_referente, estado, caminho_arquivo, caminho_nfe)
+            VALUES ($nome, $valor, $validade, $nossoNumero, $nfeReferente, $estado, $caminhoArquivo, $caminhoNfe)
             RETURNING id
             """;
         PreencherParametros(comando, boleto);
@@ -56,7 +56,8 @@ public static class BoletoRepository
                 nosso_numero = $nossoNumero,
                 nfe_referente = $nfeReferente,
                 estado = $estado,
-                caminho_arquivo = $caminhoArquivo
+                caminho_arquivo = $caminhoArquivo,
+                caminho_nfe = $caminhoNfe
             WHERE id = $id
             """;
         PreencherParametros(comando, boleto);
@@ -92,6 +93,7 @@ public static class BoletoRepository
         comando.Parameters.AddWithValue("$nfeReferente", boleto.NfeReferente);
         comando.Parameters.AddWithValue("$estado", (int)boleto.Estado);
         comando.Parameters.AddWithValue("$caminhoArquivo", boleto.CaminhoArquivo);
+        comando.Parameters.AddWithValue("$caminhoNfe", boleto.CaminhoNfe);
     }
 
     /// <summary>Caminhos de PDF já vinculados a algum boleto (para a importação não duplicar).</summary>
@@ -117,5 +119,6 @@ public static class BoletoRepository
         NfeReferente = leitor.GetString(5),
         Estado = (EstadoBoleto)leitor.GetInt32(6),
         CaminhoArquivo = leitor.GetString(7),
+        CaminhoNfe = leitor.GetString(8),
     };
 }

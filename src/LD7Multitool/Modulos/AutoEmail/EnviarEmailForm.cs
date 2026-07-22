@@ -4,8 +4,8 @@ namespace LD7Multitool.Modulos.AutoEmail;
 
 /// <summary>
 /// Diálogo de envio: escolhe o que mandar (NF-e, NF-e e Boleto, ou outros
-/// arquivos), resolve os PDFs mais recentes do cliente nas pastas
-/// configuradas e envia para os destinatários do cadastro.
+/// arquivos). Para NF-e/Boleto mostra um dropdown com todos os PDFs do cliente
+/// (mais recente pré-selecionado), permitindo escolher documentos antigos.
 /// </summary>
 public class EnviarEmailForm : Form
 {
@@ -15,13 +15,16 @@ public class EnviarEmailForm : Form
     private readonly RadioButton _opcaoNfe;
     private readonly RadioButton _opcaoNfeBoleto;
     private readonly RadioButton _opcaoOutro;
-    private readonly ListBox _listaArquivos;
-    private readonly Button _botaoAdicionarArquivo;
-    private readonly Button _botaoRemoverArquivo;
+    private readonly Panel _areaArquivos;
     private readonly Label _aviso;
     private readonly TextBox _campoAssunto;
     private readonly TextBox _campoCorpo;
     private readonly Button _botaoEnviar;
+
+    // Controles ativos conforme a opção escolhida (recriados em AtualizarOpcao).
+    private ComboBox? _comboNfe;
+    private ComboBox? _comboBoleto;
+    private ListBox? _listaOutro;
 
     public EnviarEmailForm(CadastroEmail cadastro)
     {
@@ -82,14 +85,8 @@ public class EnviarEmailForm : Form
         painelOpcoes.Controls.Add(_opcaoOutro);
         AdicionarLinha(tabela, 2, "Enviar:", painelOpcoes);
 
-        // --- Arquivos ------------------------------------------------------
-        _listaArquivos = new ListBox { Dock = DockStyle.Fill, HorizontalScrollbar = true };
-
-        _botaoAdicionarArquivo = Estilo.BotaoPadrao("Adicionar...");
-        _botaoRemoverArquivo = Estilo.BotaoPadrao("Remover");
-        _botaoAdicionarArquivo.Click += (_, _) => AdicionarArquivos();
-        _botaoRemoverArquivo.Click += (_, _) => RemoverArquivo();
-
+        // --- Arquivos (conteúdo dinâmico + aviso) --------------------------
+        _areaArquivos = new Panel { Dock = DockStyle.Fill };
         _aviso = new Label
         {
             Dock = DockStyle.Bottom,
@@ -97,25 +94,17 @@ public class EnviarEmailForm : Form
             ForeColor = Estilo.CorPerigo,
             TextAlign = ContentAlignment.MiddleLeft,
         };
-
         var painelArquivos = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 3,
+            RowCount = 2,
             Margin = new Padding(0),
         };
         painelArquivos.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         painelArquivos.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-        painelArquivos.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-        painelArquivos.Controls.Add(_listaArquivos, 0, 0);
+        painelArquivos.Controls.Add(_areaArquivos, 0, 0);
         painelArquivos.Controls.Add(_aviso, 0, 1);
-
-        var barraArquivos = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0) };
-        barraArquivos.Controls.Add(_botaoAdicionarArquivo);
-        barraArquivos.Controls.Add(_botaoRemoverArquivo);
-        painelArquivos.Controls.Add(barraArquivos, 0, 2);
-
         AdicionarLinha(tabela, 3, "Arquivos:", painelArquivos);
 
         // --- Assunto e mensagem --------------------------------------------
@@ -164,7 +153,7 @@ public class EnviarEmailForm : Form
         tabela.Controls.Add(campo, 1, linha);
     }
 
-    /// <summary>Reresolve os arquivos e o assunto quando a opção de envio muda.</summary>
+    /// <summary>Reconstrói a área de arquivos conforme a opção escolhida.</summary>
     private void AtualizarOpcao()
     {
         // CheckedChanged dispara para o botão que desmarcou e o que marcou;
@@ -172,19 +161,15 @@ public class EnviarEmailForm : Form
         if (!_opcaoNfe.Checked && !_opcaoNfeBoleto.Checked && !_opcaoOutro.Checked)
             return;
 
-        _listaArquivos.Items.Clear();
+        _comboNfe = _comboBoleto = null;
+        _listaOutro = null;
+        _areaArquivos.Controls.Clear();
         var avisos = new List<string>();
 
-        var manual = _opcaoOutro.Checked;
-        _botaoAdicionarArquivo.Visible = manual;
-        _botaoRemoverArquivo.Visible = manual;
-
-        if (!manual)
-        {
-            ResolverArquivo("NF-e", _config.PastaNfe, avisos);
-            if (_opcaoNfeBoleto.Checked)
-                ResolverArquivo("Boleto", _config.PastaBoletos, avisos);
-        }
+        if (_opcaoOutro.Checked)
+            MontarAreaManual();
+        else
+            MontarAreaDropdowns(avisos);
 
         _aviso.Text = string.Join("   |   ", avisos);
 
@@ -195,46 +180,123 @@ public class EnviarEmailForm : Form
                 : $"Documentos — {_cadastro.Nome}";
     }
 
-    private void ResolverArquivo(string rotulo, string pasta, List<string> avisos)
+    private void MontarAreaDropdowns(List<string> avisos)
     {
+        var painel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            ColumnCount = 2,
+            Margin = new Padding(0),
+        };
+        painel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
+        painel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        _comboNfe = CriarComboArquivos("NF-e", _config.PastaNfe, avisos);
+        AdicionarDropdown(painel, 0, "NF-e:", _comboNfe);
+
+        if (_opcaoNfeBoleto.Checked)
+        {
+            _comboBoleto = CriarComboArquivos("Boleto", _config.PastaBoletos, avisos);
+            AdicionarDropdown(painel, 1, "Boleto:", _comboBoleto);
+        }
+
+        _areaArquivos.Controls.Add(painel);
+    }
+
+    private static void AdicionarDropdown(TableLayoutPanel painel, int linha, string rotulo, ComboBox combo)
+    {
+        painel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+        painel.Controls.Add(new Label
+        {
+            Text = rotulo,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = Estilo.CorTextoSuave,
+        }, 0, linha);
+        combo.Dock = DockStyle.Fill;
+        combo.Margin = new Padding(0, 4, 0, 4);
+        painel.Controls.Add(combo, 1, linha);
+    }
+
+    private ComboBox CriarComboArquivos(string rotulo, string pasta, List<string> avisos)
+    {
+        var combo = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            FlatStyle = FlatStyle.Flat,
+        };
         if (string.IsNullOrWhiteSpace(pasta))
         {
             avisos.Add($"Pasta de {rotulo} não configurada (⚙)");
-            return;
+            return combo;
         }
+        foreach (var arquivo in LocalizadorArquivos.TodosPdfsDoCliente(pasta, _cadastro.Codigo))
+            combo.Items.Add(new ItemArquivo(arquivo));
 
-        var arquivo = LocalizadorArquivos.UltimoPdfDoCliente(pasta, _cadastro.Codigo);
-        if (arquivo is null)
-            avisos.Add($"{rotulo}: nenhum PDF \"Cliente-{_cadastro.Codigo}\" na pasta");
+        if (combo.Items.Count > 0)
+            combo.SelectedIndex = 0; // mais recente, mantendo o padrão
         else
-            _listaArquivos.Items.Add(arquivo);
+            avisos.Add($"{rotulo}: nenhum PDF \"Cliente-{_cadastro.Codigo}\" na pasta");
+        return combo;
     }
 
-    private void AdicionarArquivos()
+    private void MontarAreaManual()
     {
-        using var dialogo = new OpenFileDialog
+        _listaOutro = new ListBox { Dock = DockStyle.Fill, HorizontalScrollbar = true };
+
+        var botaoAdicionar = Estilo.BotaoPadrao("Adicionar...");
+        var botaoRemover = Estilo.BotaoPadrao("Remover");
+        botaoAdicionar.Click += (_, _) =>
         {
-            Multiselect = true,
-            Title = "Selecionar arquivos para enviar",
+            using var dialogo = new OpenFileDialog { Multiselect = true, Title = "Selecionar arquivos" };
+            if (dialogo.ShowDialog(this) != DialogResult.OK)
+                return;
+            foreach (var arquivo in dialogo.FileNames)
+                if (!_listaOutro.Items.Contains(arquivo))
+                    _listaOutro.Items.Add(arquivo);
         };
-        if (dialogo.ShowDialog(this) != DialogResult.OK)
-            return;
-        foreach (var arquivo in dialogo.FileNames)
+        botaoRemover.Click += (_, _) =>
         {
-            if (!_listaArquivos.Items.Contains(arquivo))
-                _listaArquivos.Items.Add(arquivo);
-        }
+            if (_listaOutro!.SelectedIndex >= 0)
+                _listaOutro.Items.RemoveAt(_listaOutro.SelectedIndex);
+        };
+
+        var painel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = new Padding(0),
+        };
+        painel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        painel.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        painel.Controls.Add(_listaOutro, 0, 0);
+        var barra = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0) };
+        barra.Controls.Add(botaoAdicionar);
+        barra.Controls.Add(botaoRemover);
+        painel.Controls.Add(barra, 0, 1);
+
+        _areaArquivos.Controls.Add(painel);
     }
 
-    private void RemoverArquivo()
+    /// <summary>Anexos conforme a opção atual.</summary>
+    private List<string> ObterAnexos()
     {
-        if (_listaArquivos.SelectedIndex >= 0)
-            _listaArquivos.Items.RemoveAt(_listaArquivos.SelectedIndex);
+        if (_opcaoOutro.Checked)
+            return _listaOutro?.Items.Cast<string>().ToList() ?? new List<string>();
+
+        var anexos = new List<string>();
+        if (_comboNfe?.SelectedItem is ItemArquivo nfe)
+            anexos.Add(nfe.Caminho);
+        if (_comboBoleto?.SelectedItem is ItemArquivo boleto)
+            anexos.Add(boleto.Caminho);
+        return anexos;
     }
 
     private async Task EnviarAsync()
     {
-        var arquivos = _listaArquivos.Items.Cast<string>().ToList();
+        var arquivos = ObterAnexos();
         if (arquivos.Count == 0)
         {
             MessageBox.Show(this,
@@ -268,5 +330,11 @@ public class EnviarEmailForm : Form
             _botaoEnviar.Enabled = true;
             UseWaitCursor = false;
         }
+    }
+
+    /// <summary>Item de dropdown de arquivo: mostra o nome, guarda o caminho.</summary>
+    private sealed record ItemArquivo(string Caminho)
+    {
+        public override string ToString() => Path.GetFileName(Caminho);
     }
 }

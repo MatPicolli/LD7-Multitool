@@ -23,11 +23,15 @@ public sealed class DistribuicaoDfeService
 
     public DistribuicaoDfeService(ConsultaFiscalConfig config) => _config = config;
 
-    /// <summary>Retorna a nota detalhada, ou null se não disponível/erro.</summary>
-    public async Task<NotaFiscalDetalhada?> ObterNotaAsync(ChaveAcesso chave)
+    /// <summary>Nota detalhada (ou null) e um diagnóstico do que a SEFAZ respondeu.</summary>
+    public sealed record Resultado(NotaFiscalDetalhada? Nota, string Diagnostico);
+
+    public async Task<Resultado> ObterNotaAsync(ChaveAcesso chave)
     {
-        if (!_config.CertificadoConfigurado || _config.CnpjSomenteDigitos.Length != 14)
-            return null;
+        if (!_config.CertificadoConfigurado)
+            return new Resultado(null, "certificado não configurado");
+        if (_config.CnpjSomenteDigitos.Length != 14)
+            return new Resultado(null, $"CNPJ da empresa inválido/não configurado (\"{_config.Cnpj}\") — preencha nas configurações ⚙");
 
         var envelope =
             "<soap12:Envelope xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\">" +
@@ -48,11 +52,24 @@ public sealed class DistribuicaoDfeService
         {
             var endpoint = _config.Producao ? UrlProducao : UrlHomologacao;
             var respostaXml = await EnviarAsync(endpoint, envelope);
-            return ExtrairNota(respostaXml);
+
+            var doc = XDocument.Parse(respostaXml);
+            var cStat = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "cStat")?.Value ?? "?";
+            var xMotivo = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "xMotivo")?.Value ?? "";
+
+            var nota = ExtrairNota(doc);
+            if (nota is not null)
+                return new Resultado(nota, $"OK (cStat {cStat})");
+
+            var temDocZip = doc.Descendants().Any(e => e.Name.LocalName == "docZip");
+            var msg = temDocZip
+                ? $"SEFAZ devolveu documento, mas não a nota completa (cStat {cStat}: {xMotivo})"
+                : $"cStat {cStat}: {xMotivo}";
+            return new Resultado(null, msg);
         }
-        catch
+        catch (Exception ex)
         {
-            return null; // qualquer falha aqui só cai no modo simples
+            return new Resultado(null, "erro na requisição: " + ex.Message);
         }
     }
 
@@ -78,10 +95,8 @@ public sealed class DistribuicaoDfeService
         return await resposta.Content.ReadAsStringAsync();
     }
 
-    private static NotaFiscalDetalhada? ExtrairNota(string respostaXml)
+    private static NotaFiscalDetalhada? ExtrairNota(XDocument doc)
     {
-        var doc = XDocument.Parse(respostaXml);
-
         // Cada docZip é um XML (procNFe, resNFe ou evento) em base64+gzip.
         foreach (var docZip in doc.Descendants().Where(e => e.Name.LocalName == "docZip"))
         {

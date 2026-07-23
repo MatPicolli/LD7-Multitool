@@ -154,13 +154,14 @@ public class ConsultaFiscalControl : UserControl
             if (resultado.Sucesso && config.BuscarDetalhes &&
                 chave.Modelo is ModeloDocumento.NFe or ModeloDocumento.NFCe)
             {
-                _ultimaNota = await new DistribuicaoDfeService(config).ObterNotaAsync(chave);
+                var distribuicao = await new DistribuicaoDfeService(config).ObterNotaAsync(chave);
+                _ultimaNota = distribuicao.Nota;
                 if (_ultimaNota is not null)
                     _detalhes.Text += "\r\n\r\n✔ Nota completa carregada para impressão " +
                         $"({_ultimaNota.Produtos.Count} produto(s)).";
                 else
-                    _detalhes.Text += "\r\n\r\nNota completa indisponível — será impresso o " +
-                        "comprovante simples (situação/protocolo).";
+                    _detalhes.Text += "\r\n\r\nNota completa indisponível — comprovante simples.\r\n" +
+                        "Distribuição DFe: " + distribuicao.Diagnostico;
             }
 
             if (resultado.Sucesso)

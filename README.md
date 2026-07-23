@@ -101,14 +101,18 @@ seu **certificado digital A1**, para imprimir o comprovante de autenticidade no
 **verso da nota** — sem navegar no site.
 
 Fluxo sem botões: o cursor fica no campo da chave; ao **bipar** (ou digitar) a
-chave de acesso de 44 dígitos, o programa detecta o tipo (NF-e modelo 55 / CT-e
-modelo 57) e a UF pela própria chave, consulta a SEFAZ e — se a impressão
-automática estiver ligada — imprime a situação, o protocolo e a data.
+chave de 44 dígitos, o programa detecta o tipo (NF-e/CT-e) e a **UF pela própria
+chave**, escolhe o endpoint correto do estado emissor e consulta a SEFAZ. Por
+padrão, depois de consultar ele **espera você inserir a nota na impressora e
+apertar Enter** para imprimir (evita imprimir no vazio). Dá para ligar a
+**impressão automática** nas configurações para quem já deixa o papel no
+alimentador.
 
-Nas configurações (⚙): caminho do certificado **.pfx/.p12** e senha (protegida
-com DPAPI), ambiente (Produção/Homologação), impressora e as **URLs dos
-endpoints** (em branco usam os padrões SVRS, que atendem SC — ajustáveis para
-outras UFs/autorizadores).
+O endpoint é escolhido automaticamente pela UF (tabela de endereços da SEFAZ por
+estado — SP, MG, PR, RS, SVRS, SVAN etc.). Nas configurações (⚙): caminho do
+certificado **.pfx/.p12** e senha (protegida com DPAPI), ambiente
+(Produção/Homologação), impressora e, se precisar, **forçar uma URL** específica
+(deixe em branco para o automático).
 
 > Observação: os endpoints e o comportamento do certificado dependem do
 > ambiente real da SEFAZ e do Windows; podem precisar de ajuste fino na

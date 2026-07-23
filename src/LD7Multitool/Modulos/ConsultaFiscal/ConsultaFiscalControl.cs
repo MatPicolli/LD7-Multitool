@@ -9,11 +9,16 @@ namespace LD7Multitool.Modulos.ConsultaFiscal;
 /// </summary>
 public class ConsultaFiscalControl : UserControl
 {
+    private const string InstrucaoBipar = "Bipe (ou digite) a chave de acesso da nota:";
+    private const string InstrucaoImprimir = "Insira a nota na impressora e pressione ENTER para imprimir";
+
     private readonly TextBox _campoChave;
+    private readonly Label _instrucao;
     private readonly Label _situacao;
     private readonly TextBox _detalhes;
     private ResultadoConsulta? _ultimo;
     private bool _consultando;
+    private bool _aguardandoImpressao;
 
     public ConsultaFiscalControl()
     {
@@ -41,9 +46,9 @@ public class ConsultaFiscalControl : UserControl
         barra.Controls.Add(painelEng);
 
         // --- Área central ---------------------------------------------------
-        var instrucao = new Label
+        _instrucao = new Label
         {
-            Text = "Bipe (ou digite) a chave de acesso da nota:",
+            Text = InstrucaoBipar,
             Dock = DockStyle.Top,
             Height = 40,
             TextAlign = ContentAlignment.MiddleCenter,
@@ -60,11 +65,13 @@ public class ConsultaFiscalControl : UserControl
         };
         _campoChave.KeyDown += (_, e) =>
         {
-            if (e.KeyCode == Keys.Enter)
-            {
-                e.SuppressKeyPress = true;
-                TentarConsultar();
-            }
+            if (e.KeyCode != Keys.Enter)
+                return;
+            e.SuppressKeyPress = true;
+            if (ChaveAcesso.TryParse(_campoChave.Text, out _))
+                TentarConsultar();           // Enter com chave completa: consulta
+            else if (_aguardandoImpressao)
+                ImprimirPendente();          // Enter com campo vazio: imprime o último
         };
         // Leitores que não mandam Enter: dispara ao juntar 44 dígitos.
         _campoChave.TextChanged += (_, _) =>
@@ -116,6 +123,8 @@ public class ConsultaFiscalControl : UserControl
         }
 
         _consultando = true;
+        _aguardandoImpressao = false;
+        _instrucao.Text = InstrucaoBipar;
         _campoChave.Enabled = false;
         DefinirSituacao("Consultando...", Estilo.CorTextoSuave);
         _detalhes.Text = $"Chave: {chave.Formatada}\r\nTipo: {chave.TipoDescricao}   UF: {chave.UfSigla}";
@@ -128,8 +137,17 @@ public class ConsultaFiscalControl : UserControl
             _ultimo = resultado;
             MostrarResultado(resultado);
 
-            if (resultado.Sucesso && config.ImprimirAutomaticamente)
-                ImprimirSeguro(resultado, config.Impressora);
+            if (resultado.Sucesso)
+            {
+                if (config.ImprimirAutomaticamente)
+                    ImprimirSeguro(resultado, config.Impressora);
+                else
+                {
+                    // Espera o usuário colocar a nota na impressora e apertar Enter.
+                    _aguardandoImpressao = true;
+                    _instrucao.Text = InstrucaoImprimir;
+                }
+            }
         }
         finally
         {
@@ -138,6 +156,16 @@ public class ConsultaFiscalControl : UserControl
             _campoChave.Clear();
             _campoChave.Focus();
         }
+    }
+
+    private void ImprimirPendente()
+    {
+        if (_ultimo is not { Sucesso: true } resultado)
+            return;
+        _aguardandoImpressao = false;
+        _instrucao.Text = InstrucaoBipar;
+        ImprimirSeguro(resultado, ConsultaFiscalConfig.Carregar().Impressora);
+        _campoChave.Focus();
     }
 
     private void MostrarResultado(ResultadoConsulta r)

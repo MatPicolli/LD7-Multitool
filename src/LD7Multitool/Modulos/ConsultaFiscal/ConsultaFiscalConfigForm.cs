@@ -44,7 +44,12 @@ public class ConsultaFiscalConfigForm : Form
         _campoAmbiente.Items.AddRange(new object[] { "Produção", "Homologação" });
         _campoAmbiente.SelectedIndex = config.Producao ? 0 : 1;
 
-        _campoAutoImprimir = new CheckBox { Dock = DockStyle.Fill, Text = "Imprimir automaticamente ao consultar", Checked = config.ImprimirAutomaticamente };
+        _campoAutoImprimir = new CheckBox
+        {
+            Dock = DockStyle.Fill,
+            Text = "Imprimir automaticamente (desligado: aguarda Enter p/ inserir a nota)",
+            Checked = config.ImprimirAutomaticamente,
+        };
 
         _campoImpressora = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
         _campoImpressora.Items.Add("(impressora padrão)");
@@ -52,19 +57,19 @@ public class ConsultaFiscalConfigForm : Form
             _campoImpressora.Items.Add(nome);
         _campoImpressora.SelectedIndex = Math.Max(0, _campoImpressora.Items.IndexOf(config.Impressora));
 
-        _campoUrlNfe = new TextBox { Dock = DockStyle.Fill, Text = config.UrlNfe, PlaceholderText = ConsultaFiscalConfig.UrlNfeProducaoPadrao };
-        _campoUrlCte = new TextBox { Dock = DockStyle.Fill, Text = config.UrlCte, PlaceholderText = ConsultaFiscalConfig.UrlCteProducaoPadrao };
+        _campoUrlNfe = new TextBox { Dock = DockStyle.Fill, Text = config.UrlNfe, PlaceholderText = "(automático pela UF da chave)" };
+        _campoUrlCte = new TextBox { Dock = DockStyle.Fill, Text = config.UrlCte, PlaceholderText = "(automático pela UF da chave)" };
 
         AdicionarLinha(tabela, 0, "Certificado A1:", CriarSeletorArquivo(_campoCertificado));
         AdicionarLinha(tabela, 1, "Senha:", _campoSenha);
         AdicionarLinha(tabela, 2, "Ambiente:", _campoAmbiente);
         AdicionarLinha(tabela, 3, "", _campoAutoImprimir);
         AdicionarLinha(tabela, 4, "Impressora:", _campoImpressora);
-        AdicionarLinha(tabela, 5, "URL NF-e:", _campoUrlNfe);
-        AdicionarLinha(tabela, 6, "URL CT-e:", _campoUrlCte);
+        AdicionarLinha(tabela, 5, "Forçar URL NF-e:", _campoUrlNfe);
+        AdicionarLinha(tabela, 6, "Forçar URL CT-e:", _campoUrlCte);
         AdicionarLinha(tabela, 7, "", new Label
         {
-            Text = "Deixe as URLs em branco para usar os padrões SVRS (SC).",
+            Text = "URLs em branco = endpoint escolhido automaticamente pela UF da chave.",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
             ForeColor = Estilo.CorTextoSuave,

@@ -32,7 +32,9 @@ public sealed class ConsultaFiscalService
         }
 
         var ehCte = chave.Modelo == ModeloDocumento.CTe;
-        var endpoint = ehCte ? _config.EndpointCte : _config.EndpointNfe;
+        var endpoint = ehCte
+            ? _config.ResolverEndpointCte(chave.CodigoUf)
+            : _config.ResolverEndpointNfe(chave.CodigoUf);
         var envelope = ehCte ? MontarEnvelopeCte(chave) : MontarEnvelopeNfe(chave);
         var action = ehCte
             ? "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4/cteConsultaCT"

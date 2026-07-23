@@ -10,35 +10,32 @@ namespace LD7Multitool.Modulos.ConsultaFiscal;
 /// </summary>
 public class ConsultaFiscalConfig
 {
-    // Padrões SVRS (atende SC). Confirme/ajuste conforme a UF/autorizador.
-    public const string UrlNfeProducaoPadrao = "https://nfe.svrs.rs.gov.br/ws/NfeConsulta/NfeConsulta4.asmx";
-    public const string UrlNfeHomologacaoPadrao = "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeConsulta/NfeConsulta4.asmx";
-    public const string UrlCteProducaoPadrao = "https://cte.svrs.rs.gov.br/ws/cteConsulta/CTeConsulta.asmx";
-    public const string UrlCteHomologacaoPadrao = "https://cte-homologacao.svrs.rs.gov.br/ws/cteConsulta/CTeConsulta.asmx";
-
     public string CaminhoCertificado { get; set; } = "";
     public string SenhaCertificado { get; set; } = "";
 
     /// <summary>1 = Produção, 2 = Homologação.</summary>
     public int Ambiente { get; set; } = 1;
 
-    public bool ImprimirAutomaticamente { get; set; } = true;
+    /// <summary>Se true, imprime assim que consulta; se false, espera Enter (para inserir a nota antes).</summary>
+    public bool ImprimirAutomaticamente { get; set; }
 
     /// <summary>Nome da impressora; vazio = impressora padrão do Windows.</summary>
     public string Impressora { get; set; } = "";
 
+    // Overrides opcionais: se preenchidos, forçam a URL para TODAS as consultas,
+    // ignorando o roteamento automático por UF. Deixe em branco para o automático.
     public string UrlNfe { get; set; } = "";
     public string UrlCte { get; set; } = "";
 
     public bool Producao => Ambiente != 2;
 
-    public string EndpointNfe =>
-        !string.IsNullOrWhiteSpace(UrlNfe) ? UrlNfe
-        : Producao ? UrlNfeProducaoPadrao : UrlNfeHomologacaoPadrao;
+    /// <summary>Endpoint da NF-e para a UF da chave (ou o override, se definido).</summary>
+    public string ResolverEndpointNfe(string codigoUf) =>
+        !string.IsNullOrWhiteSpace(UrlNfe) ? UrlNfe : EndpointsSefaz.Nfe(codigoUf, Producao);
 
-    public string EndpointCte =>
-        !string.IsNullOrWhiteSpace(UrlCte) ? UrlCte
-        : Producao ? UrlCteProducaoPadrao : UrlCteHomologacaoPadrao;
+    /// <summary>Endpoint do CT-e para a UF da chave (ou o override, se definido).</summary>
+    public string ResolverEndpointCte(string codigoUf) =>
+        !string.IsNullOrWhiteSpace(UrlCte) ? UrlCte : EndpointsSefaz.Cte(codigoUf, Producao);
 
     public bool CertificadoConfigurado =>
         !string.IsNullOrWhiteSpace(CaminhoCertificado) && File.Exists(CaminhoCertificado);
@@ -48,7 +45,7 @@ public class ConsultaFiscalConfig
         CaminhoCertificado = Obter("consulta_cert_caminho"),
         SenhaCertificado = DesprotegerSenha(ConfiguracaoRepository.Obter("consulta_cert_senha")),
         Ambiente = int.TryParse(Obter("consulta_ambiente"), out var a) ? a : 1,
-        ImprimirAutomaticamente = Obter("consulta_autoimprimir") != "0",
+        ImprimirAutomaticamente = Obter("consulta_autoimprimir") == "1",
         Impressora = Obter("consulta_impressora"),
         UrlNfe = Obter("consulta_url_nfe"),
         UrlCte = Obter("consulta_url_cte"),

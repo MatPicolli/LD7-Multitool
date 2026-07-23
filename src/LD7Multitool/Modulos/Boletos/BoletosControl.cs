@@ -163,7 +163,7 @@ public class BoletosControl : UserControl
             const int tamanho = 16;
             var x = e.CellBounds.Right - LarguraAlerta + (LarguraAlerta - tamanho) / 2;
             var y = e.CellBounds.Top + (e.CellBounds.Height - tamanho) / 2;
-            e.Graphics.DrawIcon(SystemIcons.Warning, new Rectangle(x, y, tamanho, tamanho));
+            e.Graphics!.DrawIcon(SystemIcons.Warning, new Rectangle(x, y, tamanho, tamanho));
             e.Handled = true;
         };
 

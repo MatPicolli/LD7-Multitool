@@ -19,6 +19,7 @@ public class ConsultaFiscalControl : UserControl
     private ResultadoConsulta? _ultimo;
     private bool _consultando;
     private bool _aguardandoImpressao;
+    private DateTime _consultaFinalizadaEm;
 
     public ConsultaFiscalControl()
     {
@@ -63,15 +64,22 @@ public class ConsultaFiscalControl : UserControl
             TextAlign = HorizontalAlignment.Center,
             Margin = new Padding(40),
         };
-        _campoChave.KeyDown += (_, e) =>
+        _campoChave.KeyDown += (sender, e) =>
         {
             if (e.KeyCode != Keys.Enter)
                 return;
             e.SuppressKeyPress = true;
             if (ChaveAcesso.TryParse(_campoChave.Text, out _))
+            {
                 TentarConsultar();           // Enter com chave completa: consulta
-            else if (_aguardandoImpressao)
-                ImprimirPendente();          // Enter com campo vazio: imprime o último
+            }
+            else if (_aguardandoImpressao &&
+                     (DateTime.Now - _consultaFinalizadaEm).TotalMilliseconds > 1200)
+            {
+                // Ignora o ENTER que o próprio leitor manda logo após a chave;
+                // só imprime num ENTER "tardio" (depois de inserir a nota).
+                ImprimirPendente();
+            }
         };
         // Leitores que não mandam Enter: dispara ao juntar 44 dígitos.
         _campoChave.TextChanged += (_, _) =>
@@ -103,7 +111,7 @@ public class ConsultaFiscalControl : UserControl
         painelCentro.Controls.Add(_detalhes);
         painelCentro.Controls.Add(_situacao);
         painelCentro.Controls.Add(_campoChave);
-        painelCentro.Controls.Add(instrucao);
+        painelCentro.Controls.Add(_instrucao);
 
         Controls.Add(painelCentro);
         Controls.Add(barra);
@@ -145,6 +153,7 @@ public class ConsultaFiscalControl : UserControl
                 {
                     // Espera o usuário colocar a nota na impressora e apertar Enter.
                     _aguardandoImpressao = true;
+                    _consultaFinalizadaEm = DateTime.Now;
                     _instrucao.Text = InstrucaoImprimir;
                 }
             }

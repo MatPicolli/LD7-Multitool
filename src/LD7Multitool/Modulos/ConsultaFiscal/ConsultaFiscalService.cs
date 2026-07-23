@@ -91,7 +91,7 @@ public sealed class ConsultaFiscalService
     {
         // UserKeySet (não exige admin) + PersistKeySet: necessário no Windows
         // para o schannel enxergar a chave privada do PFX na autenticação TLS.
-        using var certificado = new X509Certificate2(
+        using var certificado = X509CertificateLoader.LoadPkcs12FromFile(
             _config.CaminhoCertificado, _config.SenhaCertificado,
             X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.PersistKeySet);
 

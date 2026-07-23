@@ -17,6 +17,8 @@ public class ConsultaFiscalControl : UserControl
     private readonly Label _situacao;
     private readonly TextBox _detalhes;
     private ResultadoConsulta? _ultimo;
+    private NotaFiscalDetalhada? _ultimaNota;
+    private ChaveAcesso? _ultimaChave;
     private bool _consultando;
     private bool _aguardandoImpressao;
     private DateTime _consultaFinalizadaEm;
@@ -132,6 +134,8 @@ public class ConsultaFiscalControl : UserControl
 
         _consultando = true;
         _aguardandoImpressao = false;
+        _ultimaNota = null;
+        _ultimaChave = chave;
         _instrucao.Text = InstrucaoBipar;
         _campoChave.Enabled = false;
         DefinirSituacao("Consultando...", Estilo.CorTextoSuave);
@@ -145,10 +149,24 @@ public class ConsultaFiscalControl : UserControl
             _ultimo = resultado;
             MostrarResultado(resultado);
 
+            // Busca o conteúdo completo da nota (emit/dest/produtos) para o
+            // layout detalhado, quando habilitado e for NF-e.
+            if (resultado.Sucesso && config.BuscarDetalhes &&
+                chave.Modelo is ModeloDocumento.NFe or ModeloDocumento.NFCe)
+            {
+                _ultimaNota = await new DistribuicaoDfeService(config).ObterNotaAsync(chave);
+                if (_ultimaNota is not null)
+                    _detalhes.Text += "\r\n\r\n✔ Nota completa carregada para impressão " +
+                        $"({_ultimaNota.Produtos.Count} produto(s)).";
+                else
+                    _detalhes.Text += "\r\n\r\nNota completa indisponível — será impresso o " +
+                        "comprovante simples (situação/protocolo).";
+            }
+
             if (resultado.Sucesso)
             {
                 if (config.ImprimirAutomaticamente)
-                    ImprimirSeguro(resultado, config.Impressora);
+                    Imprimir();
                 else
                 {
                     // Espera o usuário colocar a nota na impressora e apertar Enter.
@@ -169,11 +187,11 @@ public class ConsultaFiscalControl : UserControl
 
     private void ImprimirPendente()
     {
-        if (_ultimo is not { Sucesso: true } resultado)
+        if (_ultimo is not { Sucesso: true })
             return;
         _aguardandoImpressao = false;
         _instrucao.Text = InstrucaoBipar;
-        ImprimirSeguro(resultado, ConsultaFiscalConfig.Carregar().Impressora);
+        Imprimir();
         _campoChave.Focus();
     }
 
@@ -206,18 +224,23 @@ public class ConsultaFiscalControl : UserControl
 
     private void Reimprimir()
     {
-        if (_ultimo is { Sucesso: true } r)
-            ImprimirSeguro(r, ConsultaFiscalConfig.Carregar().Impressora);
+        if (_ultimo is { Sucesso: true })
+            Imprimir();
         else
             MessageBox.Show(this, "Nenhuma consulta bem-sucedida para imprimir.", "Reimprimir",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
-    private void ImprimirSeguro(ResultadoConsulta r, string impressora)
+    /// <summary>Imprime a nota completa se disponível; senão, o comprovante simples.</summary>
+    private void Imprimir()
     {
+        var impressora = ConsultaFiscalConfig.Carregar().Impressora;
         try
         {
-            ImpressaoConsulta.Imprimir(r, impressora);
+            if (_ultimaNota is not null && _ultimaChave is not null)
+                ImpressaoConsulta.ImprimirNota(_ultimaNota, _ultimaChave, impressora);
+            else if (_ultimo is { Sucesso: true } r)
+                ImpressaoConsulta.Imprimir(r, impressora);
         }
         catch (Exception ex)
         {

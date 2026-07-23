@@ -22,6 +22,17 @@ public class ConsultaFiscalConfig
     /// <summary>Nome da impressora; vazio = impressora padrão do Windows.</summary>
     public string Impressora { get; set; } = "";
 
+    /// <summary>Buscar o conteúdo completo da nota (emitente/dest/produtos) via Distribuição DFe.</summary>
+    public bool BuscarDetalhes { get; set; } = true;
+
+    /// <summary>CNPJ da sua empresa (usado na Distribuição DFe — deve ser parte da nota).</summary>
+    public string Cnpj { get; set; } = "";
+
+    /// <summary>Código IBGE da UF da sua empresa (ex.: 42 = SC), usado como cUFAutor.</summary>
+    public string UfEmpresaCodigo { get; set; } = "42";
+
+    public string CnpjSomenteDigitos => new(Cnpj.Where(char.IsDigit).ToArray());
+
     // Overrides opcionais: se preenchidos, forçam a URL para TODAS as consultas,
     // ignorando o roteamento automático por UF. Deixe em branco para o automático.
     public string UrlNfe { get; set; } = "";
@@ -47,6 +58,9 @@ public class ConsultaFiscalConfig
         Ambiente = int.TryParse(Obter("consulta_ambiente"), out var a) ? a : 1,
         ImprimirAutomaticamente = Obter("consulta_autoimprimir") == "1",
         Impressora = Obter("consulta_impressora"),
+        BuscarDetalhes = Obter("consulta_detalhes") != "0",
+        Cnpj = Obter("consulta_cnpj"),
+        UfEmpresaCodigo = string.IsNullOrEmpty(Obter("consulta_uf")) ? "42" : Obter("consulta_uf"),
         UrlNfe = Obter("consulta_url_nfe"),
         UrlCte = Obter("consulta_url_cte"),
     };
@@ -58,6 +72,9 @@ public class ConsultaFiscalConfig
         ConfiguracaoRepository.Definir("consulta_ambiente", Ambiente.ToString());
         ConfiguracaoRepository.Definir("consulta_autoimprimir", ImprimirAutomaticamente ? "1" : "0");
         ConfiguracaoRepository.Definir("consulta_impressora", Impressora);
+        ConfiguracaoRepository.Definir("consulta_detalhes", BuscarDetalhes ? "1" : "0");
+        ConfiguracaoRepository.Definir("consulta_cnpj", Cnpj);
+        ConfiguracaoRepository.Definir("consulta_uf", UfEmpresaCodigo);
         ConfiguracaoRepository.Definir("consulta_url_nfe", UrlNfe);
         ConfiguracaoRepository.Definir("consulta_url_cte", UrlCte);
     }

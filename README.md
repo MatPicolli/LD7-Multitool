@@ -109,9 +109,18 @@ apertar Enter** para imprimir (evita imprimir no vazio). Dá para ligar a
 alimentador.
 
 O endpoint é escolhido automaticamente pela UF (tabela de endereços da SEFAZ por
-estado — SP, MG, PR, RS, SVRS, SVAN etc.). Nas configurações (⚙): caminho do
-certificado **.pfx/.p12** e senha (protegida com DPAPI), ambiente
-(Produção/Homologação), impressora e, se precisar, **forçar uma URL** específica
+estado — SP, MG, PR, RS, SVRS, SVAN etc.).
+
+**Impressão da nota completa:** com a opção "Imprimir a nota completa" ligada, o
+programa também busca o XML da nota via **Distribuição DFe** e imprime um resumo
+com **emitente, destinatário, produtos, valores e protocolo** (parecido com a
+"Consulta Completa" do portal). Isso exige que o **seu CNPJ** (configurado) seja
+**parte da nota** — normalmente o destinatário. Quando a nota completa não está
+disponível, cai automaticamente para o comprovante simples (situação/protocolo).
+
+Nas configurações (⚙): caminho do certificado **.pfx/.p12** e senha (protegida
+com DPAPI), ambiente (Produção/Homologação), impressora, **CNPJ e UF da sua
+empresa** (para a nota completa) e, se precisar, **forçar uma URL** específica
 (deixe em branco para o automático).
 
 > Observação: os endpoints e o comportamento do certificado dependem do

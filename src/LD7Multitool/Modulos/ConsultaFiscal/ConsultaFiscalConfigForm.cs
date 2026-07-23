@@ -11,6 +11,9 @@ public class ConsultaFiscalConfigForm : Form
     private readonly ComboBox _campoAmbiente;
     private readonly CheckBox _campoAutoImprimir;
     private readonly ComboBox _campoImpressora;
+    private readonly CheckBox _campoDetalhes;
+    private readonly TextBox _campoCnpj;
+    private readonly TextBox _campoUf;
     private readonly TextBox _campoUrlNfe;
     private readonly TextBox _campoUrlCte;
 
@@ -23,7 +26,7 @@ public class ConsultaFiscalConfigForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(620, 470);
+        ClientSize = new Size(620, 590);
 
         var config = ConsultaFiscalConfig.Carregar();
 
@@ -31,7 +34,7 @@ public class ConsultaFiscalConfigForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 9,
+            RowCount = 12,
             Padding = new Padding(16),
         };
         tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
@@ -57,6 +60,15 @@ public class ConsultaFiscalConfigForm : Form
             _campoImpressora.Items.Add(nome);
         _campoImpressora.SelectedIndex = Math.Max(0, _campoImpressora.Items.IndexOf(config.Impressora));
 
+        _campoDetalhes = new CheckBox
+        {
+            Dock = DockStyle.Fill,
+            Text = "Imprimir a nota completa (emitente, destinatário, produtos)",
+            Checked = config.BuscarDetalhes,
+        };
+        _campoCnpj = new TextBox { Dock = DockStyle.Fill, Text = config.Cnpj, PlaceholderText = "CNPJ da sua empresa (destinatária das notas)" };
+        _campoUf = new TextBox { Dock = DockStyle.Fill, Text = config.UfEmpresaCodigo, PlaceholderText = "Código IBGE da UF (42 = SC)" };
+
         _campoUrlNfe = new TextBox { Dock = DockStyle.Fill, Text = config.UrlNfe, PlaceholderText = "(automático pela UF da chave)" };
         _campoUrlCte = new TextBox { Dock = DockStyle.Fill, Text = config.UrlCte, PlaceholderText = "(automático pela UF da chave)" };
 
@@ -65,11 +77,14 @@ public class ConsultaFiscalConfigForm : Form
         AdicionarLinha(tabela, 2, "Ambiente:", _campoAmbiente);
         AdicionarLinha(tabela, 3, "", _campoAutoImprimir);
         AdicionarLinha(tabela, 4, "Impressora:", _campoImpressora);
-        AdicionarLinha(tabela, 5, "Forçar URL NF-e:", _campoUrlNfe);
-        AdicionarLinha(tabela, 6, "Forçar URL CT-e:", _campoUrlCte);
-        AdicionarLinha(tabela, 7, "", new Label
+        AdicionarLinha(tabela, 5, "", _campoDetalhes);
+        AdicionarLinha(tabela, 6, "CNPJ empresa:", _campoCnpj);
+        AdicionarLinha(tabela, 7, "UF empresa:", _campoUf);
+        AdicionarLinha(tabela, 8, "Forçar URL NF-e:", _campoUrlNfe);
+        AdicionarLinha(tabela, 9, "Forçar URL CT-e:", _campoUrlCte);
+        AdicionarLinha(tabela, 10, "", new Label
         {
-            Text = "URLs em branco = endpoint escolhido automaticamente pela UF da chave.",
+            Text = "URLs em branco = endpoint automático pela UF da chave.",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
             ForeColor = Estilo.CorTextoSuave,
@@ -84,7 +99,7 @@ public class ConsultaFiscalConfigForm : Form
         painelBotoes.Controls.Add(botaoSalvar);
         painelBotoes.Controls.Add(botaoCancelar);
         tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-        tabela.Controls.Add(painelBotoes, 1, 8);
+        tabela.Controls.Add(painelBotoes, 1, 11);
 
         Controls.Add(tabela);
         AcceptButton = botaoSalvar;
@@ -147,6 +162,9 @@ public class ConsultaFiscalConfigForm : Form
             Ambiente = _campoAmbiente.SelectedIndex == 1 ? 2 : 1,
             ImprimirAutomaticamente = _campoAutoImprimir.Checked,
             Impressora = _campoImpressora.SelectedIndex <= 0 ? "" : (string)_campoImpressora.SelectedItem!,
+            BuscarDetalhes = _campoDetalhes.Checked,
+            Cnpj = _campoCnpj.Text.Trim(),
+            UfEmpresaCodigo = _campoUf.Text.Trim().Length > 0 ? _campoUf.Text.Trim() : "42",
             UrlNfe = _campoUrlNfe.Text.Trim(),
             UrlCte = _campoUrlCte.Text.Trim(),
         };

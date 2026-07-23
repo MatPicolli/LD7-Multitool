@@ -95,38 +95,6 @@ vencimento e nosso número:
 
 O botão **Abrir PDF** abre o arquivo vinculado ao boleto selecionado.
 
-### 🔎 Consulta NF-e/CT-e
-Consulta a **situação** de uma NF-e/CT-e direto no web service da SEFAZ, usando
-seu **certificado digital A1**, para imprimir o comprovante de autenticidade no
-**verso da nota** — sem navegar no site.
-
-Fluxo sem botões: o cursor fica no campo da chave; ao **bipar** (ou digitar) a
-chave de 44 dígitos, o programa detecta o tipo (NF-e/CT-e) e a **UF pela própria
-chave**, escolhe o endpoint correto do estado emissor e consulta a SEFAZ. Por
-padrão, depois de consultar ele **espera você inserir a nota na impressora e
-apertar Enter** para imprimir (evita imprimir no vazio). Dá para ligar a
-**impressão automática** nas configurações para quem já deixa o papel no
-alimentador.
-
-O endpoint é escolhido automaticamente pela UF (tabela de endereços da SEFAZ por
-estado — SP, MG, PR, RS, SVRS, SVAN etc.).
-
-**Impressão da nota completa:** com a opção "Imprimir a nota completa" ligada, o
-programa também busca o XML da nota via **Distribuição DFe** e imprime um resumo
-com **emitente, destinatário, produtos, valores e protocolo** (parecido com a
-"Consulta Completa" do portal). Isso exige que o **seu CNPJ** (configurado) seja
-**parte da nota** — normalmente o destinatário. Quando a nota completa não está
-disponível, cai automaticamente para o comprovante simples (situação/protocolo).
-
-Nas configurações (⚙): caminho do certificado **.pfx/.p12** e senha (protegida
-com DPAPI), ambiente (Produção/Homologação), impressora, **CNPJ e UF da sua
-empresa** (para a nota completa) e, se precisar, **forçar uma URL** específica
-(deixe em branco para o automático).
-
-> Observação: os endpoints e o comportamento do certificado dependem do
-> ambiente real da SEFAZ e do Windows; podem precisar de ajuste fino na
-> primeira configuração.
-
 ## Requisitos
 
 - Windows

@@ -95,6 +95,25 @@ vencimento e nosso número:
 
 O botão **Abrir PDF** abre o arquivo vinculado ao boleto selecionado.
 
+### 🔎 Consulta NF-e/CT-e
+Consulta a **situação** de uma NF-e/CT-e direto no web service da SEFAZ, usando
+seu **certificado digital A1**, para imprimir o comprovante de autenticidade no
+**verso da nota** — sem navegar no site.
+
+Fluxo sem botões: o cursor fica no campo da chave; ao **bipar** (ou digitar) a
+chave de acesso de 44 dígitos, o programa detecta o tipo (NF-e modelo 55 / CT-e
+modelo 57) e a UF pela própria chave, consulta a SEFAZ e — se a impressão
+automática estiver ligada — imprime a situação, o protocolo e a data.
+
+Nas configurações (⚙): caminho do certificado **.pfx/.p12** e senha (protegida
+com DPAPI), ambiente (Produção/Homologação), impressora e as **URLs dos
+endpoints** (em branco usam os padrões SVRS, que atendem SC — ajustáveis para
+outras UFs/autorizadores).
+
+> Observação: os endpoints e o comportamento do certificado dependem do
+> ambiente real da SEFAZ e do Windows; podem precisar de ajuste fino na
+> primeira configuração.
+
 ## Requisitos
 
 - Windows

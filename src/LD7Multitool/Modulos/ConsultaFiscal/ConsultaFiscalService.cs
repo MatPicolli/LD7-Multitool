@@ -57,35 +57,23 @@ public sealed class ConsultaFiscalService
         }
     }
 
-    private string MontarEnvelopeNfe(ChaveAcesso chave) => $"""
-        <?xml version="1.0" encoding="utf-8"?>
-        <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-          <soap12:Body>
-            <nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeConsultaProtocolo4">
-              <consSitNFe versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
-                <tpAmb>{_config.Ambiente}</tpAmb>
-                <xServ>CONSULTAR</xServ>
-                <chNFe>{chave.Digitos}</chNFe>
-              </consSitNFe>
-            </nfeDadosMsg>
-          </soap12:Body>
-        </soap12:Envelope>
-        """;
+    // IMPORTANTE: a SEFAZ rejeita (588) espaços/quebras de linha entre as tags.
+    // O XML precisa ir "achatado", sem indentação nem declaração <?xml?>.
+    private string MontarEnvelopeNfe(ChaveAcesso chave) =>
+        "<soap12:Envelope xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\">" +
+        "<soap12:Body>" +
+        "<nfeDadosMsg xmlns=\"http://www.portalfiscal.inf.br/nfe/wsdl/NFeConsultaProtocolo4\">" +
+        "<consSitNFe versao=\"4.00\" xmlns=\"http://www.portalfiscal.inf.br/nfe\">" +
+        $"<tpAmb>{_config.Ambiente}</tpAmb><xServ>CONSULTAR</xServ><chNFe>{chave.Digitos}</chNFe>" +
+        "</consSitNFe></nfeDadosMsg></soap12:Body></soap12:Envelope>";
 
-    private string MontarEnvelopeCte(ChaveAcesso chave) => $"""
-        <?xml version="1.0" encoding="utf-8"?>
-        <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-          <soap12:Body>
-            <cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4">
-              <consSitCTe versao="4.00" xmlns="http://www.portalfiscal.inf.br/cte">
-                <tpAmb>{_config.Ambiente}</tpAmb>
-                <xServ>CONSULTAR</xServ>
-                <chCTe>{chave.Digitos}</chCTe>
-              </consSitCTe>
-            </cteDadosMsg>
-          </soap12:Body>
-        </soap12:Envelope>
-        """;
+    private string MontarEnvelopeCte(ChaveAcesso chave) =>
+        "<soap12:Envelope xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\">" +
+        "<soap12:Body>" +
+        "<cteDadosMsg xmlns=\"http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4\">" +
+        "<consSitCTe versao=\"4.00\" xmlns=\"http://www.portalfiscal.inf.br/cte\">" +
+        $"<tpAmb>{_config.Ambiente}</tpAmb><xServ>CONSULTAR</xServ><chCTe>{chave.Digitos}</chCTe>" +
+        "</consSitCTe></cteDadosMsg></soap12:Body></soap12:Envelope>";
 
     private async Task<string> EnviarSoapAsync(string endpoint, string envelope, string action)
     {

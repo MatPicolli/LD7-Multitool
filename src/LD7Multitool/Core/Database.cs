@@ -77,6 +77,36 @@ public static class Database
                 caminho_arquivo TEXT NOT NULL DEFAULT '',
                 caminho_nfe     TEXT NOT NULL DEFAULT ''
             );
+
+            CREATE TABLE IF NOT EXISTS representantes (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome      TEXT NOT NULL,
+                email     TEXT NOT NULL DEFAULT '',
+                telefone1 TEXT NOT NULL DEFAULT '',
+                telefone2 TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS clientes (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo           TEXT NOT NULL UNIQUE,
+                razao_social     TEXT NOT NULL,
+                nome_fantasia    TEXT NOT NULL DEFAULT '',
+                cpf_cnpj         TEXT NOT NULL DEFAULT '',
+                ie               TEXT NOT NULL DEFAULT '',
+                endereco         TEXT NOT NULL DEFAULT '',
+                cep              TEXT NOT NULL DEFAULT '',
+                uf               TEXT NOT NULL DEFAULT '',
+                cidade           TEXT NOT NULL DEFAULT '',
+                bairro           TEXT NOT NULL DEFAULT '',
+                email1           TEXT NOT NULL DEFAULT '',
+                email2           TEXT NOT NULL DEFAULT '',
+                telefone1        TEXT NOT NULL DEFAULT '',
+                telefone2        TEXT NOT NULL DEFAULT '',
+                contato          TEXT NOT NULL DEFAULT '',
+                contato_email    TEXT NOT NULL DEFAULT '',
+                contato_telefone TEXT NOT NULL DEFAULT '',
+                representante_id INTEGER REFERENCES representantes(id) ON DELETE SET NULL
+            );
             """;
         comando.ExecuteNonQuery();
 

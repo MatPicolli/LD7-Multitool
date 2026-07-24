@@ -17,7 +17,7 @@ public class ClienteForm : Form
     private readonly TextBox _campoCodigo;
     private readonly TextBox _campoCnpj;
     private readonly TextBox _campoCpf;
-    private readonly Button _botaoBuscarCnpj;
+    private readonly Label _botaoBuscarCnpj;
     private readonly TextBox _campoRazaoSocial;
     private readonly TextBox _campoNomeFantasia;
     private readonly TextBox _campoRg;
@@ -36,7 +36,7 @@ public class ClienteForm : Form
     private readonly TextBox _campoUf;
     private readonly TextBox _campoCidade;
     private readonly TextBox _campoBairro;
-    private readonly Button _botaoBuscarCep;
+    private readonly Label _botaoBuscarCep;
 
     private readonly TextBox _campoTelefone;
     private readonly TextBox _campoCelular;
@@ -87,8 +87,7 @@ public class ClienteForm : Form
         _campoCpf = new TextBox { Text = Mascaras.Cpf(Cliente.Cpf) };
         _campoCnpj.TextChanged += (_, _) => AplicarMascara(_campoCnpj, Mascaras.Cnpj);
         _campoCpf.TextChanged += (_, _) => AplicarMascara(_campoCpf, Mascaras.Cpf);
-        _botaoBuscarCnpj = Estilo.BotaoPadrao("🌐");
-        new ToolTip().SetToolTip(_botaoBuscarCnpj, "Buscar dados da empresa pelo CNPJ (Receita)");
+        _botaoBuscarCnpj = CriarLinkEmoji("🌐", "Buscar dados da empresa pelo CNPJ (Receita)");
         _botaoBuscarCnpj.Click += async (_, _) => await BuscarCnpjAsync();
         _campoRazaoSocial = new TextBox { Text = Cliente.RazaoSocial };
         _campoNomeFantasia = new TextBox { Text = Cliente.NomeFantasia };
@@ -121,8 +120,7 @@ public class ClienteForm : Form
         _campoUf = new TextBox { Text = Cliente.Uf, MaxLength = 2, CharacterCasing = CharacterCasing.Upper };
         _campoCidade = new TextBox { Text = Cliente.Cidade };
         _campoCep = new TextBox { Text = Cliente.Cep };
-        _botaoBuscarCep = Estilo.BotaoPadrao("🌐");
-        new ToolTip().SetToolTip(_botaoBuscarCep, "Buscar endereço pelo CEP na internet");
+        _botaoBuscarCep = CriarLinkEmoji("🌐", "Buscar endereço pelo CEP na internet");
         _botaoBuscarCep.Click += async (_, _) => await BuscarCepAsync();
         _campoEndereco = new TextBox { Text = Cliente.Endereco };
         _campoNumero = new TextBox { Text = Cliente.Numero };
@@ -350,7 +348,24 @@ public class ClienteForm : Form
         return painel;
     }
 
-    /// <summary>Linha do documento: campo CNPJ + botão de consulta + campo CPF.</summary>
+    /// <summary>Emoji clicável (sem cara de botão) para as buscas na internet.</summary>
+    private static Label CriarLinkEmoji(string emoji, string dica)
+    {
+        var link = new Label
+        {
+            Text = emoji,
+            AutoSize = false,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Cursor = Cursors.Hand,
+            Font = new Font(Estilo.FontePadrao.FontFamily, 14f),
+            Margin = new Padding(0),
+            Padding = new Padding(0),
+        };
+        new ToolTip().SetToolTip(link, dica);
+        return link;
+    }
+
+    /// <summary>Linha do documento: campo CNPJ + link de consulta + campo CPF.</summary>
     private Control CriarLinhaDocumento()
     {
         var painel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0) };
@@ -360,11 +375,7 @@ public class ClienteForm : Form
 
         _campoCnpj.Dock = DockStyle.Fill;
         _campoCnpj.Margin = new Padding(0, 3, 0, 3);
-        _botaoBuscarCnpj.AutoSize = false;
-        _botaoBuscarCnpj.MinimumSize = Size.Empty;
         _botaoBuscarCnpj.Dock = DockStyle.Fill;
-        _botaoBuscarCnpj.Padding = new Padding(0);
-        _botaoBuscarCnpj.Margin = new Padding(4, 2, 0, 2);
         _campoCpf.Dock = DockStyle.Fill;
         _campoCpf.Margin = new Padding(6, 3, 0, 3);
 
@@ -381,11 +392,7 @@ public class ClienteForm : Form
         painel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         painel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 40));
         painel.Controls.Add(_campoCep, 0, 0);
-        _botaoBuscarCep.AutoSize = false;
-        _botaoBuscarCep.MinimumSize = Size.Empty;
         _botaoBuscarCep.Dock = DockStyle.Fill;
-        _botaoBuscarCep.Padding = new Padding(0);
-        _botaoBuscarCep.Margin = new Padding(6, 2, 0, 2);
         painel.Controls.Add(_botaoBuscarCep, 1, 0);
         return painel;
     }
@@ -422,14 +429,15 @@ public class ClienteForm : Form
         UseWaitCursor = true;
         try
         {
-            var dados = await ServicoCnpj.BuscarAsync(digitos);
-            if (dados is null)
+            var resultado = await ServicoCnpj.BuscarAsync(digitos);
+            if (!resultado.Ok)
             {
-                MessageBox.Show(this, "CNPJ não encontrado ou serviço indisponível.", "Consultar CNPJ",
+                MessageBox.Show(this, resultado.Erro ?? "Não foi possível consultar o CNPJ.", "Consultar CNPJ",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
+            var dados = resultado.Dados!;
             _campoRazaoSocial.Text = dados.RazaoSocial;
             _campoNomeFantasia.Text = dados.NomeFantasia;
             _campoEndereco.Text = dados.Logradouro.ToUpperInvariant();

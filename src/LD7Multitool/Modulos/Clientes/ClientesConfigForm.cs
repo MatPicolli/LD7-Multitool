@@ -17,7 +17,7 @@ public class ClientesConfigForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(540, 300);
+        ClientSize = new Size(560, 430);
 
         var rotuloTitulo = new Label
         {
@@ -25,7 +25,7 @@ public class ClientesConfigForm : Form
             Font = new Font("Segoe UI Semibold", 10.5f),
             ForeColor = Estilo.CorPrimaria,
             AutoSize = true,
-            Location = new Point(16, 16),
+            Margin = new Padding(0, 0, 0, 10),
         };
 
         var rotuloAjuda = new Label
@@ -44,12 +44,22 @@ public class ClientesConfigForm : Form
                 "Uma prévia é mostrada antes de confirmar a importação.",
             ForeColor = Estilo.CorTextoSuave,
             AutoSize = true,
-            Location = new Point(16, 48),
-            MaximumSize = new Size(500, 0),
+            Margin = new Padding(0),
+            MaximumSize = new Size(510, 0),
         };
 
+        var conteudo = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Padding = new Padding(16),
+            BackColor = Estilo.CorSuperficie,
+        };
+        conteudo.Controls.Add(rotuloTitulo);
+        conteudo.Controls.Add(rotuloAjuda);
+
         var botaoImportar = Estilo.BotaoPrimario("Selecionar arquivo CSV...");
-        botaoImportar.Location = new Point(16, 220);
         botaoImportar.Click += (_, _) => SelecionarEImportar();
 
         var botaoFechar = Estilo.BotaoPadrao("Fechar");
@@ -60,16 +70,16 @@ public class ClientesConfigForm : Form
             FlowDirection = FlowDirection.RightToLeft,
             Dock = DockStyle.Bottom,
             Height = 58,
-            Padding = new Padding(8),
+            Padding = new Padding(12, 10, 12, 10),
+            BackColor = Estilo.CorSuperficie,
         };
+        painelBotoes.Controls.Add(botaoImportar);
         painelBotoes.Controls.Add(botaoFechar);
 
-        Controls.Add(rotuloTitulo);
-        Controls.Add(rotuloAjuda);
-        Controls.Add(botaoImportar);
+        Controls.Add(conteudo);
         Controls.Add(painelBotoes);
 
-        AcceptButton = botaoFechar;
+        AcceptButton = botaoImportar;
         CancelButton = botaoFechar;
     }
 

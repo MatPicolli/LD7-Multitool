@@ -125,6 +125,10 @@ public static class Estilo
         grade.ColumnHeadersDefaultCellStyle.ForeColor = CorTextoSuave;
         grade.ColumnHeadersDefaultCellStyle.Font = FonteCabecalhoGrade;
         grade.ColumnHeadersDefaultCellStyle.Padding = new Padding(6, 0, 0, 0);
+        // Ao clicar/ordenar um cabeçalho, mantém fundo claro e letra escura
+        // (antes ficava azul forte com letra cinza — ilegível).
+        grade.ColumnHeadersDefaultCellStyle.SelectionBackColor = CorSelecao;
+        grade.ColumnHeadersDefaultCellStyle.SelectionForeColor = CorTexto;
         grade.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
         grade.GridColor = Color.FromArgb(232, 234, 240);
         grade.RowTemplate.Height = 34;
@@ -138,5 +142,32 @@ public static class Estilo
         grade.DefaultCellStyle.SelectionBackColor = CorPrimaria;
         grade.DefaultCellStyle.SelectionForeColor = Color.White;
         grade.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 250, 253);
+
+        // Divisor vertical sutil entre os cabeçalhos (a grade não tem borda
+        // vertical, então desenhamos uma linha fina entre uma coluna e outra).
+        grade.CellPainting += DesenharDivisorCabecalho;
+    }
+
+    private static void DesenharDivisorCabecalho(object? remetente, DataGridViewCellPaintingEventArgs e)
+    {
+        // Só a linha de cabeçalho (RowIndex == -1), ignorando o canto (ColumnIndex < 0).
+        if (e.RowIndex != -1 || e.ColumnIndex < 0)
+            return;
+
+        var grade = (DataGridView)remetente!;
+        e.PaintBackground(e.CellBounds, true);
+        e.PaintContent(e.CellBounds);
+
+        // Não desenha à direita da última coluna visível (fica na borda da grade).
+        var ultima = grade.Columns.GetLastColumn(
+            DataGridViewElementStates.Visible, DataGridViewElementStates.None);
+        if (ultima is null || e.ColumnIndex != ultima.Index)
+        {
+            using var caneta = new Pen(CorBorda);
+            var x = e.CellBounds.Right - 1;
+            e.Graphics.DrawLine(caneta, x, e.CellBounds.Top + 8, x, e.CellBounds.Bottom - 8);
+        }
+
+        e.Handled = true;
     }
 }

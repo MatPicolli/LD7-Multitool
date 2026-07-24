@@ -3,12 +3,13 @@ using LD7Multitool.Core;
 namespace LD7Multitool.Modulos.Clientes;
 
 /// <summary>
-/// Formulário de criação/edição de um cliente: layout em duas colunas
-/// (Dados pessoais/Representante à esquerda, Endereço/Contato à direita),
-/// com alternância Física/Jurídica e busca automática de CEP.
+/// Formulário de criação/edição de um cliente: layout em duas colunas com
+/// caixas (GroupBox) por seção, alternância Física/Jurídica e busca de CEP.
 /// </summary>
 public class ClienteForm : Form
 {
+    private const int AlturaLinha = 30;
+
     private readonly RadioButton _radioFisica;
     private readonly RadioButton _radioJuridica;
     private readonly CheckBox _campoAtivo;
@@ -65,49 +66,28 @@ public class ClienteForm : Form
         Font = Estilo.FontePadrao;
         BackColor = Estilo.CorFundo;
         StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(960, 760);
-        ClientSize = new Size(960, 760);
+        MinimumSize = new Size(1000, 660);
+        ClientSize = new Size(1000, 660);
         KeyPreview = true;
 
-        // --- Cabeçalho: modo + Ativo ----------------------------------------
-        var cabecalho = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            Height = 40,
-            ColumnCount = 2,
-            BackColor = Estilo.CorFundo,
-            Padding = new Padding(20, 12, 20, 0),
-        };
-        cabecalho.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        cabecalho.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        cabecalho.Controls.Add(new Label
-        {
-            Text = novo ? "Inserindo" : "Editando",
-            AutoSize = true,
-            Font = new Font("Segoe UI Semibold", 12f),
-        }, 0, 0);
-
-        _campoAtivo = new CheckBox { Text = "Ativo", AutoSize = true, Checked = Cliente.Ativo, Anchor = AnchorStyles.Right };
-        cabecalho.Controls.Add(_campoAtivo, 1, 0);
-
-        // --- Campos: Dados pessoais ------------------------------------------
+        // --- Campos ----------------------------------------------------------
         _campoCodigo = new TextBox { Text = Cliente.Codigo, ReadOnly = true, BackColor = Estilo.CorFundo };
 
-        _radioFisica = new RadioButton { Text = "Física", AutoSize = true, Checked = Cliente.Tipo == TipoCliente.Fisica };
-        _radioJuridica = new RadioButton { Text = "Jurídica", AutoSize = true, Checked = Cliente.Tipo == TipoCliente.Juridica, Margin = new Padding(16, 0, 0, 0) };
+        _radioFisica = new RadioButton { Text = "Física", AutoSize = true, Checked = Cliente.Tipo == TipoCliente.Fisica, Margin = new Padding(0, 4, 0, 0) };
+        _radioJuridica = new RadioButton { Text = "Jurídica", AutoSize = true, Checked = Cliente.Tipo == TipoCliente.Juridica, Margin = new Padding(20, 4, 0, 0) };
         _radioFisica.CheckedChanged += (_, _) => AtualizarTipoCliente();
         _radioJuridica.CheckedChanged += (_, _) => AtualizarTipoCliente();
-        var painelTipo = new FlowLayoutPanel { Dock = DockStyle.Fill, Margin = new Padding(0) };
+        var painelTipo = new FlowLayoutPanel { Dock = DockStyle.Fill, Margin = new Padding(0), WrapContents = false };
         painelTipo.Controls.Add(_radioFisica);
         painelTipo.Controls.Add(_radioJuridica);
 
         _campoCnpj = new TextBox { Text = Cliente.Cnpj };
         _campoCpf = new TextBox { Text = Cliente.Cpf };
-        _campoRazaoSocial = new TextBox { Dock = DockStyle.Fill, Text = Cliente.RazaoSocial };
-        _campoNomeFantasia = new TextBox { Dock = DockStyle.Fill, Text = Cliente.NomeFantasia };
+        _campoRazaoSocial = new TextBox { Text = Cliente.RazaoSocial };
+        _campoNomeFantasia = new TextBox { Text = Cliente.NomeFantasia };
         _campoRg = new TextBox { Text = Cliente.Rg };
         _campoIe = new TextBox { Text = Cliente.Ie };
-        _campoInscricaoMunicipal = new TextBox { Dock = DockStyle.Fill, Text = Cliente.InscricaoMunicipal };
+        _campoInscricaoMunicipal = new TextBox { Text = Cliente.InscricaoMunicipal };
 
         _campoEstadoCivil = new ComboBox { DropDownStyle = ComboBoxStyle.DropDown, FlatStyle = FlatStyle.Flat, Text = Cliente.EstadoCivil };
         _campoEstadoCivil.Items.AddRange(new object[] { "Solteiro(a)", "Casado(a)", "Divorciado(a)", "Viúvo(a)", "União Estável" });
@@ -122,31 +102,15 @@ public class ClienteForm : Form
             ShowCheckBox = true,
             Checked = Cliente.DataNascimento.HasValue,
             Value = Cliente.DataNascimento ?? DateTime.Today,
+            MinimumSize = new Size(120, 0),
         };
 
         _campoNacionalidade = new TextBox { Text = Cliente.Nacionalidade };
         _campoNaturalidade = new TextBox { Text = Cliente.Naturalidade };
 
-        var tabelaDadosPessoais = NovaTabelaCampos();
-        AdicionarLinha(tabelaDadosPessoais, "Código:", _campoCodigo);
-        AdicionarLinha(tabelaDadosPessoais, "Tipo de cliente:", painelTipo);
-        AdicionarLinha(tabelaDadosPessoais, "CNPJ / CPF:", CamposLadoALado((_campoCnpj, 1), (_campoCpf, 1)));
-        AdicionarLinha(tabelaDadosPessoais, "Razão Social *:", _campoRazaoSocial);
-        AdicionarLinha(tabelaDadosPessoais, "Nome fantasia:", _campoNomeFantasia);
-        AdicionarLinha(tabelaDadosPessoais, "RG / Insc. Estadual:", CamposLadoALado((_campoRg, 1), (_campoIe, 1)));
-        AdicionarLinha(tabelaDadosPessoais, "Insc. Municipal:", _campoInscricaoMunicipal);
-        AdicionarLinha(tabelaDadosPessoais, "Estado civil / Sexo / Nasc.:",
-            CamposLadoALado((_campoEstadoCivil, 2), (_campoSexo, 1), (_campoDataNascimento, 1)));
-        AdicionarLinha(tabelaDadosPessoais, "Nacionalidade / Naturalidade:",
-            CamposLadoALado((_campoNacionalidade, 1), (_campoNaturalidade, 1)));
-
-        // --- Campos: Representante -------------------------------------------
-        _campoRepresentante = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
+        _campoRepresentante = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
         CarregarRepresentantes();
-        var tabelaRepresentante = NovaTabelaCampos();
-        AdicionarLinha(tabelaRepresentante, "Representante:", _campoRepresentante);
 
-        // --- Campos: Endereço --------------------------------------------------
         _campoUf = new TextBox { Text = Cliente.Uf, MaxLength = 2, CharacterCasing = CharacterCasing.Upper };
         _campoCidade = new TextBox { Text = Cliente.Cidade };
         _campoCep = new TextBox { Text = Cliente.Cep };
@@ -154,48 +118,73 @@ public class ClienteForm : Form
         _botaoBuscarCep.Click += async (_, _) => await BuscarCepAsync();
         _campoEndereco = new TextBox { Text = Cliente.Endereco };
         _campoNumero = new TextBox { Text = Cliente.Numero };
-        _campoComplemento = new TextBox { Dock = DockStyle.Fill, Text = Cliente.Complemento };
-        _campoBairro = new TextBox { Dock = DockStyle.Fill, Text = Cliente.Bairro };
+        _campoComplemento = new TextBox { Text = Cliente.Complemento };
+        _campoBairro = new TextBox { Text = Cliente.Bairro };
 
-        var tabelaEndereco = NovaTabelaCampos();
-        AdicionarLinha(tabelaEndereco, "UF * / Município *:", CamposLadoALado((_campoUf, 1), (_campoCidade, 3)));
-        AdicionarLinha(tabelaEndereco, "CEP *:", CriarLinhaCep());
-        AdicionarLinha(tabelaEndereco, "Endereço / Número:", CamposLadoALado((_campoEndereco, 4), (_campoNumero, 1)));
-        AdicionarLinha(tabelaEndereco, "Complemento:", _campoComplemento);
-        AdicionarLinha(tabelaEndereco, "Bairro:", _campoBairro);
-
-        // --- Campos: Contato -----------------------------------------------
         _campoTelefone = new TextBox { Text = Cliente.Telefone };
         _campoCelular = new TextBox { Text = Cliente.Celular };
         _campoSite = new TextBox { Text = Cliente.Site };
-        _campoEmail1 = new TextBox { Dock = DockStyle.Fill, Text = Cliente.Email1 };
-        _campoEmail2 = new TextBox { Dock = DockStyle.Fill, Text = Cliente.Email2 };
+        _campoEmail1 = new TextBox { Text = Cliente.Email1 };
+        _campoEmail2 = new TextBox { Text = Cliente.Email2 };
         _campoContato = new TextBox { Text = Cliente.Contato };
         _campoContatoEmail = new TextBox { Text = Cliente.ContatoEmail };
         _campoContatoTelefone = new TextBox { Text = Cliente.ContatoTelefone };
 
-        var tabelaContato = NovaTabelaCampos();
-        AdicionarLinha(tabelaContato, "Telefone / Celular / Site:",
-            CamposLadoALado((_campoTelefone, 1), (_campoCelular, 1), (_campoSite, 1)));
-        AdicionarLinha(tabelaContato, "E-mail 1:", _campoEmail1);
-        AdicionarLinha(tabelaContato, "E-mail 2:", _campoEmail2);
-        AdicionarLinha(tabelaContato, "Contato:",
-            CamposLadoALado((_campoContato, 1), (_campoContatoEmail, 2), (_campoContatoTelefone, 1)));
+        // --- Grupos ----------------------------------------------------------
+        var gbDados = CriarGrupo("Dados pessoais", new (string, Control)[]
+        {
+            ("Código", _campoCodigo),
+            ("Tipo de cliente", painelTipo),
+            ("CNPJ / CPF", CamposLadoALado((_campoCnpj, 1), (_campoCpf, 1))),
+            ("Razão Social *", _campoRazaoSocial),
+            ("Nome fantasia", _campoNomeFantasia),
+            ("RG / Insc. Estadual", CamposLadoALado((_campoRg, 1), (_campoIe, 1))),
+            ("Insc. Municipal", _campoInscricaoMunicipal),
+            ("Estado civil", _campoEstadoCivil),
+            ("Sexo / Nascimento", CamposLadoALado((_campoSexo, 1), (_campoDataNascimento, 1))),
+            ("Nacionalidade", _campoNacionalidade),
+            ("Naturalidade", _campoNaturalidade),
+        });
+        var gbRepresentante = CriarGrupo("Representante", new (string, Control)[]
+        {
+            ("Representante", _campoRepresentante),
+        });
+        var gbEndereco = CriarGrupo("Endereço", new (string, Control)[]
+        {
+            ("UF * / Município *", CamposLadoALado((_campoUf, 1), (_campoCidade, 4))),
+            ("CEP *", CriarLinhaCep()),
+            ("Endereço / Nº", CamposLadoALado((_campoEndereco, 4), (_campoNumero, 1))),
+            ("Complemento", _campoComplemento),
+            ("Bairro", _campoBairro),
+        });
+        var gbContato = CriarGrupo("Contato", new (string, Control)[]
+        {
+            ("Telefone / Celular / Site", CamposLadoALado((_campoTelefone, 1), (_campoCelular, 1), (_campoSite, 1))),
+            ("E-mail 1", _campoEmail1),
+            ("E-mail 2", _campoEmail2),
+            ("Contato", CamposLadoALado((_campoContato, 1), (_campoContatoEmail, 2), (_campoContatoTelefone, 1))),
+        });
 
-        // --- Monta as colunas ---------------------------------------------------
-        var colunaEsquerda = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Padding = new Padding(20, 12, 10, 12) };
-        colunaEsquerda.Controls.Add(CriarSecao("Representante", tabelaRepresentante));
-        colunaEsquerda.Controls.Add(CriarSecao("Dados pessoais", tabelaDadosPessoais));
-
-        var colunaDireita = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Padding = new Padding(10, 12, 20, 12) };
-        colunaDireita.Controls.Add(CriarSecao("Contato", tabelaContato));
-        colunaDireita.Controls.Add(CriarSecao("Endereço", tabelaEndereco));
+        var colunaEsquerda = CriarColuna(new Padding(16, 8, 8, 8), (gbDados, 11), (gbRepresentante, 1));
+        var colunaDireita = CriarColuna(new Padding(8, 8, 16, 8), (gbEndereco, 5), (gbContato, 4));
 
         var conteudo = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
         conteudo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         conteudo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         conteudo.Controls.Add(colunaEsquerda, 0, 0);
         conteudo.Controls.Add(colunaDireita, 1, 0);
+
+        // --- Cabeçalho ------------------------------------------------------
+        var cabecalho = new Panel { Dock = DockStyle.Top, Height = 44, BackColor = Estilo.CorFundo, Padding = new Padding(20, 12, 20, 0) };
+        cabecalho.Controls.Add(new Label
+        {
+            Text = novo ? "Inserindo" : "Editando",
+            AutoSize = true,
+            Dock = DockStyle.Left,
+            Font = new Font("Segoe UI Semibold", 12f),
+        });
+        _campoAtivo = new CheckBox { Text = "Ativo", AutoSize = true, Checked = Cliente.Ativo, Dock = DockStyle.Right };
+        cabecalho.Controls.Add(_campoAtivo);
 
         // --- Botões ---------------------------------------------------------
         _botaoSalvar = Estilo.BotaoPrimario("Gravar (F8)");
@@ -259,30 +248,77 @@ public class ClienteForm : Form
         _campoRepresentante.SelectedIndex = Math.Max(0, indice);
     }
 
-    private static TableLayoutPanel NovaTabelaCampos() => new()
+    /// <summary>Caixa (GroupBox) com título e uma tabela de linhas rótulo/campo.</summary>
+    private static GroupBox CriarGrupo(string titulo, (string Rotulo, Control Campo)[] linhas)
     {
-        Dock = DockStyle.Top,
-        AutoSize = true,
-        AutoSizeMode = AutoSizeMode.GrowAndShrink,
-        ColumnCount = 2,
-        Margin = new Padding(0),
-        ColumnStyles = { new ColumnStyle(SizeType.Absolute, 170), new ColumnStyle(SizeType.Percent, 100) },
-    };
-
-    private static void AdicionarLinha(TableLayoutPanel tabela, string rotulo, Control campo)
-    {
-        var linha = tabela.RowStyles.Count;
-        tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-        tabela.RowCount = tabela.RowStyles.Count;
-        tabela.Controls.Add(new Label
+        var tabela = new TableLayoutPanel
         {
-            Text = rotulo,
             Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
-            ForeColor = Estilo.CorTextoSuave,
-        }, 0, linha);
-        campo.Dock = campo.Dock == DockStyle.None ? DockStyle.Fill : campo.Dock;
-        tabela.Controls.Add(campo, 1, linha);
+            ColumnCount = 2,
+            Font = Estilo.FontePadrao,
+            ForeColor = Estilo.CorTexto,
+        };
+        tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
+        tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        for (var i = 0; i < linhas.Length; i++)
+        {
+            tabela.RowStyles.Add(new RowStyle(SizeType.Absolute, AlturaLinha));
+            tabela.Controls.Add(new Label
+            {
+                Text = linhas[i].Rotulo,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                ForeColor = Estilo.CorTextoSuave,
+                Margin = new Padding(0),
+            }, 0, i);
+
+            var campo = linhas[i].Campo;
+            campo.Dock = DockStyle.Fill;
+            campo.Margin = new Padding(0, 3, 0, 3);
+            tabela.Controls.Add(campo, 1, i);
+        }
+        tabela.RowCount = linhas.Length;
+
+        var gb = new GroupBox
+        {
+            Text = titulo,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0),
+            ForeColor = Estilo.CorPrimaria,
+            Font = new Font("Segoe UI Semibold", 9.75f),
+            Padding = new Padding(12, 6, 12, 10),
+        };
+        gb.Controls.Add(tabela);
+        return gb;
+    }
+
+    /// <summary>Altura fixa de uma caixa com <paramref name="linhas"/> linhas.</summary>
+    private static int AlturaGrupo(int linhas) => linhas * AlturaLinha + 48;
+
+    /// <summary>Coluna com as caixas empilhadas (alturas fixas) e espaço entre elas.</summary>
+    private static TableLayoutPanel CriarColuna(Padding padding, params (GroupBox Caixa, int Linhas)[] grupos)
+    {
+        var coluna = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            AutoScroll = true,
+            Padding = padding,
+        };
+        coluna.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        var linha = 0;
+        foreach (var (caixa, linhas) in grupos)
+        {
+            coluna.RowStyles.Add(new RowStyle(SizeType.Absolute, AlturaGrupo(linhas)));
+            coluna.Controls.Add(caixa, 0, linha++);
+            coluna.RowStyles.Add(new RowStyle(SizeType.Absolute, 14)); // espaço entre caixas
+            linha++;
+        }
+        coluna.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // empurra tudo para cima
+        coluna.RowCount = coluna.RowStyles.Count;
+        return coluna;
     }
 
     /// <summary>Coloca vários campos numa linha só, cada um com seu peso relativo de largura.</summary>
@@ -299,60 +335,24 @@ public class ClienteForm : Form
         {
             painel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, itens[i].Peso));
             itens[i].Campo.Dock = DockStyle.Fill;
-            itens[i].Campo.Margin = new Padding(i == 0 ? 0 : 4, 0, 0, 0);
+            itens[i].Campo.Margin = new Padding(i == 0 ? 0 : 6, 0, 0, 0);
             painel.Controls.Add(itens[i].Campo, i, 0);
         }
         return painel;
-    }
-
-    /// <summary>Título em destaque + separador + a tabela de campos da seção.</summary>
-    private static Control CriarSecao(string titulo, TableLayoutPanel tabelaCampos)
-    {
-        var container = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            ColumnCount = 1,
-            RowCount = 3,
-            Margin = new Padding(0, 0, 0, 24),
-        };
-        container.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        container.RowStyles.Add(new RowStyle(SizeType.Absolute, 10));
-        container.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        container.Controls.Add(new Label
-        {
-            Text = titulo,
-            AutoSize = true,
-            Font = new Font("Segoe UI Semibold", 10.5f),
-            ForeColor = Estilo.CorPrimaria,
-            Margin = new Padding(0),
-        }, 0, 0);
-        container.Controls.Add(new Panel
-        {
-            Dock = DockStyle.Fill,
-            Height = 1,
-            BackColor = Estilo.CorBorda,
-            Margin = new Padding(0, 4, 0, 0),
-        }, 0, 1);
-        container.Controls.Add(tabelaCampos, 0, 2);
-
-        return container;
     }
 
     private Control CriarLinhaCep()
     {
         _campoCep.Dock = DockStyle.Fill;
         var painel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
-        painel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
-        painel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        painel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        painel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 40));
         painel.Controls.Add(_campoCep, 0, 0);
         _botaoBuscarCep.AutoSize = false;
         _botaoBuscarCep.MinimumSize = Size.Empty;
-        _botaoBuscarCep.Size = new Size(34, 29);
+        _botaoBuscarCep.Dock = DockStyle.Fill;
         _botaoBuscarCep.Padding = new Padding(0);
-        _botaoBuscarCep.Margin = new Padding(4, 0, 0, 0);
+        _botaoBuscarCep.Margin = new Padding(6, 2, 0, 2);
         painel.Controls.Add(_botaoBuscarCep, 1, 0);
         return painel;
     }

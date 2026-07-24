@@ -87,6 +87,28 @@ public static class ClienteRepository
         comando.ExecuteNonQuery();
     }
 
+    /// <summary>
+    /// Procura um cliente já cadastrado com o mesmo documento (CPF ou CNPJ),
+    /// comparando só os dígitos. <paramref name="ignorarId"/> exclui o próprio
+    /// cliente ao editar. Retorna null se não houver duplicado.
+    /// </summary>
+    public static Cliente? BuscarPorDocumento(string documento, long ignorarId = 0)
+    {
+        var digitos = new string(documento.Where(char.IsDigit).ToArray());
+        if (digitos.Length == 0)
+            return null;
+
+        return Listar().FirstOrDefault(c =>
+            c.Id != ignorarId &&
+            (MesmoDocumento(c.Cpf, digitos) || MesmoDocumento(c.Cnpj, digitos)));
+    }
+
+    private static bool MesmoDocumento(string armazenado, string digitos)
+    {
+        var d = new string(armazenado.Where(char.IsDigit).ToArray());
+        return d.Length > 0 && d == digitos;
+    }
+
     /// <summary>Gera um código de 4 dígitos ainda não usado (ex.: "0492").</summary>
     public static string GerarCodigoUnico()
     {

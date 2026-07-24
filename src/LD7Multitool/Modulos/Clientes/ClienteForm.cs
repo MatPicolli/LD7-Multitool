@@ -500,6 +500,24 @@ public class ClienteForm : Form
         Cliente.Ativo = _campoAtivo.Checked;
         Cliente.Cnpj = SomenteDigitos(_campoCnpj.Text);
         Cliente.Cpf = SomenteDigitos(_campoCpf.Text);
+
+        // Avisa se o CPF/CNPJ já pertence a outro cadastro (ignora o próprio ao editar).
+        var documento = Cliente.Tipo == TipoCliente.Fisica ? Cliente.Cpf : Cliente.Cnpj;
+        if (documento.Length > 0)
+        {
+            var existente = ClienteRepository.BuscarPorDocumento(documento, Cliente.Id);
+            if (existente is not null)
+            {
+                var rotulo = Cliente.Tipo == TipoCliente.Fisica ? "CPF" : "CNPJ";
+                MessageBox.Show(this,
+                    $"Já existe um cliente cadastrado com esse {rotulo}.\n\n" +
+                    $"Código: {existente.Codigo}\n" +
+                    $"Razão social: {existente.RazaoSocial}",
+                    "Cadastro duplicado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+        }
+
         Cliente.RazaoSocial = _campoRazaoSocial.Text.Trim();
         Cliente.NomeFantasia = _campoNomeFantasia.Text.Trim();
         Cliente.Rg = _campoRg.Text.Trim();

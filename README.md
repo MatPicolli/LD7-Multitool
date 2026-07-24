@@ -119,7 +119,9 @@ inspirada em ERPs de gestão comercial:
 - **Representante** vinculado, escolhido de um cadastro próprio de
   representantes (nome, e-mail, dois telefones), gerenciável pelo botão
   "Representantes" na barra superior;
-- Botão **"Gravar (F8)"** salva o cadastro (atalho de teclado incluso).
+- Botão **"Gravar (F8)"** salva o cadastro (atalho de teclado incluso). Se o
+  CPF/CNPJ já pertencer a outro cliente, um aviso mostra o **código** e a razão
+  social do cadastro existente e o salvamento é bloqueado (evita duplicados).
 
 A pesquisa aceita código, razão social, nome fantasia ou CPF/CNPJ (tolerante a
 acentos/maiúsculas). O botão **"Gerar ficha (PDF)"** cria a ficha cadastral do

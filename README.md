@@ -97,16 +97,24 @@ O botão **Abrir PDF** abre o arquivo vinculado ao boleto selecionado.
 
 ### 👥 Clientes
 Cadastro de clientes (reescrita do antigo MILITARISYS, agora integrado ao
-SQLite do Multitool em vez de arquivos `.csv`), com:
+SQLite do Multitool em vez de arquivos `.csv`), com tela em duas colunas
+inspirada em ERPs de gestão comercial:
 
-- **Código** de 4 dígitos gerado automaticamente (único, não editável);
-- Razão social, nome fantasia, CPF/CNPJ, inscrição estadual;
-- Endereço completo com **busca automática de CEP** (ViaCEP) — preenche
-  logradouro, cidade, UF e bairro com um clique;
-- Dois e-mails e dois telefones do cliente, mais contato (nome/e-mail/tel);
+- **Código** de 4 dígitos gerado automaticamente (único, não editável) e
+  marcador **Ativo/Inativo**;
+- Alternância **Pessoa Física / Jurídica**: mostra CPF (Física) ou CNPJ
+  (Jurídica) conforme a escolha, e habilita os dados pessoais (RG, estado
+  civil, sexo, data de nascimento, nacionalidade, naturalidade) só para
+  Física;
+- Razão social/nome, nome fantasia, inscrições estadual e municipal;
+- Endereço completo (logradouro, número, complemento, bairro) com **busca
+  automática de CEP** (ViaCEP) — preenche logradouro, cidade, UF e bairro com
+  um clique no botão 📍;
+- Telefone, celular, site, dois e-mails e contato (nome/e-mail/telefone);
 - **Representante** vinculado, escolhido de um cadastro próprio de
   representantes (nome, e-mail, dois telefones), gerenciável pelo botão
-  "Representantes" na barra superior.
+  "Representantes" na barra superior;
+- Botão **"Gravar (F8)"** salva o cadastro (atalho de teclado incluso).
 
 A pesquisa aceita código, razão social, nome fantasia ou CPF/CNPJ (tolerante a
 acentos/maiúsculas). O botão **"Gerar ficha (PDF)"** cria a ficha cadastral do

@@ -198,14 +198,22 @@ public class ImportarClientesForm : Form
         {
             var colunas = candidato.Colunas;
 
+            // O CSV antigo tem um único campo "CPF/CNPJ"; separamos pelo nº de
+            // dígitos (11 = CPF/Física, senão CNPJ/Jurídica), igual à migração do banco.
+            var documento = colunas[ColCpfCnpj].Trim();
+            var digitosDocumento = new string(documento.Where(char.IsDigit).ToArray());
+            var fisica = digitosDocumento.Length == 11;
+
             var cliente = new Cliente
             {
                 Codigo = colunas[ColCodigo].Trim().Length > 0
                     ? colunas[ColCodigo].Trim()
                     : ClienteRepository.GerarCodigoUnico(),
+                Tipo = fisica ? TipoCliente.Fisica : TipoCliente.Juridica,
+                Cpf = fisica ? documento : "",
+                Cnpj = fisica ? "" : documento,
                 RazaoSocial = colunas[ColRazaoSocial].Trim(),
                 NomeFantasia = colunas[ColNomeFantasia].Trim(),
-                CpfCnpj = colunas[ColCpfCnpj].Trim(),
                 Ie = colunas[ColIe].Trim(),
                 Endereco = colunas[ColEndereco].Trim(),
                 Cep = colunas[ColCep].Trim(),
@@ -214,8 +222,8 @@ public class ImportarClientesForm : Form
                 Bairro = colunas[ColBairro].Trim(),
                 Email1 = colunas[ColEmail1].Trim(),
                 Email2 = colunas[ColEmail2].Trim(),
-                Telefone1 = colunas[ColTelefone1].Trim(),
-                Telefone2 = colunas[ColTelefone2].Trim(),
+                Telefone = colunas[ColTelefone1].Trim(),
+                Celular = colunas[ColTelefone2].Trim(),
                 Contato = colunas[ColContato].Trim(),
                 ContatoEmail = colunas[ColContatoEmail].Trim(),
                 ContatoTelefone = colunas[ColContatoTelefone].Trim(),

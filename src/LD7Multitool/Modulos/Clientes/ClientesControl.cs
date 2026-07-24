@@ -88,8 +88,10 @@ public class ClientesControl : UserControl
         _grade.Columns.Add("cpfCnpj", "CPF/CNPJ");
         _grade.Columns.Add("cidadeUf", "Cidade/UF");
         _grade.Columns.Add("representante", "Representante");
+        _grade.Columns.Add("ativo", "Ativo");
         _grade.Columns["codigo"]!.FillWeight = 40;
         _grade.Columns["cidadeUf"]!.FillWeight = 70;
+        _grade.Columns["ativo"]!.FillWeight = 40;
         _grade.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) Editar(); };
 
         _resumo = new Label
@@ -133,17 +135,22 @@ public class ClientesControl : UserControl
                 c.Codigo,
                 c.RazaoSocial,
                 c.NomeFantasia,
-                c.CpfCnpj,
+                c.DocumentoExibicao,
                 string.Join("/", new[] { c.Cidade, c.Uf }.Where(s => s.Length > 0)),
-                c.RepresentanteNome);
-            _grade.Rows[indice].Tag = c;
+                c.RepresentanteNome,
+                c.Ativo ? "Sim" : "Não");
+
+            var linha = _grade.Rows[indice];
+            linha.Tag = c;
+            if (!c.Ativo)
+                linha.DefaultCellStyle.ForeColor = Estilo.CorTextoSuave;
         }
 
         _resumo.Text = $"{_visiveis.Count} cliente(s)";
     }
 
     private static string TextoPesquisavel(Cliente c) =>
-        Normalizar(string.Join(' ', c.Codigo, c.RazaoSocial, c.NomeFantasia, c.CpfCnpj));
+        Normalizar(string.Join(' ', c.Codigo, c.RazaoSocial, c.NomeFantasia, c.Cpf, c.Cnpj));
 
     /// <summary>Minúsculas e sem acentos, para uma busca tolerante.</summary>
     private static string Normalizar(string texto)

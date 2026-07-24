@@ -53,23 +53,48 @@ public static class FichaClientePdf
         }
 
         Titulo($"Ficha Cadastral — {cliente.RazaoSocial}");
-        gfx.DrawString($"Código: {cliente.Codigo}", fTexto, XBrushes.Gray, new XRect(x, y, largura, 16), XStringFormats.TopLeft);
+        gfx.DrawString(
+            $"Código: {cliente.Codigo}   |   " +
+            $"{(cliente.Tipo == TipoCliente.Fisica ? "Pessoa Física" : "Pessoa Jurídica")}   |   " +
+            (cliente.Ativo ? "Ativo" : "Inativo"),
+            fTexto, XBrushes.Gray, new XRect(x, y, largura, 16), XStringFormats.TopLeft);
         y += 24;
 
         Secao("DADOS DO CLIENTE");
         Campo("Razão Social", cliente.RazaoSocial);
         Campo("Nome Fantasia", cliente.NomeFantasia);
-        Campo("CPF/CNPJ", cliente.CpfCnpj);
+        if (cliente.Tipo == TipoCliente.Fisica)
+        {
+            Campo("CPF", cliente.Cpf);
+            Campo("RG", cliente.Rg);
+        }
+        else
+        {
+            Campo("CNPJ", cliente.Cnpj);
+        }
         Campo("Inscrição Estadual", cliente.Ie);
+        Campo("Inscrição Municipal", cliente.InscricaoMunicipal);
+
+        if (cliente.Tipo == TipoCliente.Fisica)
+        {
+            Secao("DADOS PESSOAIS");
+            Campo("Estado civil", cliente.EstadoCivil);
+            Campo("Sexo", cliente.Sexo);
+            Campo("Data de nascimento", cliente.DataNascimento?.ToString("dd/MM/yyyy") ?? "");
+            Campo("Nacionalidade", cliente.Nacionalidade);
+            Campo("Naturalidade", cliente.Naturalidade);
+        }
 
         Secao("ENDEREÇO");
-        Campo("Endereço", cliente.Endereco);
+        Campo("Endereço", Juntar(", ", cliente.Endereco, cliente.Numero));
+        Campo("Complemento", cliente.Complemento);
         Campo("CEP", cliente.Cep);
         Campo("UF / Cidade / Bairro", Juntar(" / ", cliente.Uf, cliente.Cidade, cliente.Bairro));
 
         Secao("CONTATO");
         Campo("E-mail(s)", Juntar("   |   ", cliente.Email1, cliente.Email2));
-        Campo("Telefone(s)", Juntar("   |   ", cliente.Telefone1, cliente.Telefone2));
+        Campo("Telefone / Celular", Juntar("   |   ", cliente.Telefone, cliente.Celular));
+        Campo("Site", cliente.Site);
         Campo("Contato", cliente.Contato);
         Campo("E-mail do contato", cliente.ContatoEmail);
         Campo("Telefone do contato", cliente.ContatoTelefone);

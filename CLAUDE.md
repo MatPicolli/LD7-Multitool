@@ -122,16 +122,6 @@ regrida**:
   artefato do repositório.
 - Mensagens de commit em português, descritivas, explicando o **porquê**.
 
-## Protótipo WPF (experimental)
-
-Existe um projeto **separado** em `src/LD7Multitool.Wpf/` — um protótipo em WPF
-(shell + módulo Clientes) feito a pedido do usuário para comparar o visual com o
-WinForms. **Não** substitui o programa: roda lado a lado e **reaproveita a
-camada de dados por link** (`<Compile Include="..\LD7Multitool\...">`), sem
-alterar nenhum arquivo do WinForms. Reverter = apagar a pasta. Se for mexer,
-mantenha essa separação (não crie dependência do WPF dentro do WinForms nem
-vice-versa) e lembre que o WinForms continua sendo o programa principal.
-
 ## Como o usuário compila/roda (na máquina Windows dele)
 
 ```bash

@@ -1,0 +1,33 @@
+<Window x:Class="LD7Multitool.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LD7 Multitool (WPF — protótipo)"
+        Height="640" Width="1040"
+        MinHeight="520" MinWidth="880"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI"
+        Background="{StaticResource Fundo}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Menu lateral -->
+        <Border Grid.Column="0" Background="{StaticResource Menu}">
+            <StackPanel>
+                <TextBlock Text="LD7 Multitool" Foreground="White" FontSize="18" FontWeight="SemiBold"
+                           Margin="20,24,20,20" />
+                <RadioButton x:Name="navAutoEmail" GroupName="nav" Style="{StaticResource ItemMenu}"
+                             Content="Auto-Email" Tag="autoemail" Checked="Nav_Checked" />
+                <RadioButton x:Name="navBoletos" GroupName="nav" Style="{StaticResource ItemMenu}"
+                             Content="Boletos" Tag="boletos" Checked="Nav_Checked" />
+                <RadioButton x:Name="navClientes" GroupName="nav" Style="{StaticResource ItemMenu}"
+                             Content="Clientes" Tag="clientes" Checked="Nav_Checked" />
+            </StackPanel>
+        </Border>
+
+        <!-- Área de conteúdo (troca conforme o módulo) -->
+        <ContentControl x:Name="areaConteudo" Grid.Column="1" />
+    </Grid>
+</Window>

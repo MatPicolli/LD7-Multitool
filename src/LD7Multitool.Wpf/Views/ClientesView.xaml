@@ -1,0 +1,52 @@
+<UserControl x:Class="LD7Multitool.Wpf.Views.ClientesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI"
+             Background="{StaticResource Fundo}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Barra superior -->
+        <Border Grid.Row="0" Background="{StaticResource Superficie}"
+                BorderBrush="{StaticResource Borda}" BorderThickness="0,0,0,1" Padding="16,12">
+            <TextBlock Text="Clientes" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{StaticResource Texto}" />
+        </Border>
+
+        <!-- Busca (com marca d'água) -->
+        <Grid Grid.Row="1" Margin="16,12,16,8">
+            <TextBox x:Name="campoBusca" TextChanged="Busca_TextChanged" />
+            <TextBlock IsHitTestVisible="False" Margin="10,0,0,0" VerticalAlignment="Center"
+                       Foreground="{StaticResource TextoSuave}"
+                       Text="Pesquisar por código, razão social, nome fantasia ou CPF/CNPJ...">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Text, ElementName=campoBusca}" Value="">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
+
+        <!-- Grade -->
+        <DataGrid x:Name="grade" Grid.Row="2" Margin="16,0,16,16">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80" />
+                <DataGridTextColumn Header="Razão Social" Binding="{Binding RazaoSocial}" Width="2*" />
+                <DataGridTextColumn Header="Nome Fantasia" Binding="{Binding NomeFantasia}" Width="2*" />
+                <DataGridTextColumn Header="CPF/CNPJ" Binding="{Binding Documento}" Width="1.4*" />
+                <DataGridTextColumn Header="Cidade/UF" Binding="{Binding CidadeUf}" Width="1.4*" />
+                <DataGridTextColumn Header="Representante" Binding="{Binding Representante}" Width="1.4*" />
+                <DataGridTextColumn Header="Ativo" Binding="{Binding Ativo}" Width="70" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

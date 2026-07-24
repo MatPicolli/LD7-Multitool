@@ -27,12 +27,14 @@ public class ClientesControl : UserControl
         var botaoExcluir = Estilo.BotaoPerigo("Excluir");
         var botaoPdf = Estilo.BotaoPadrao("Gerar ficha (PDF)");
         var botaoRepresentantes = Estilo.BotaoPadrao("Representantes");
+        var botaoConfig = Estilo.BotaoIcone("⚙", "Configurações (importar CSV)");
 
         botaoNovo.Click += (_, _) => Novo();
         botaoEditar.Click += (_, _) => Editar();
         botaoExcluir.Click += (_, _) => Excluir();
         botaoPdf.Click += (_, _) => GerarPdf();
         botaoRepresentantes.Click += (_, _) => AbrirRepresentantes();
+        botaoConfig.Click += (_, _) => AbrirConfiguracoes();
 
         var fluxoAcoes = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, Padding = new Padding(0) };
         fluxoAcoes.Controls.Add(botaoNovo);
@@ -40,7 +42,13 @@ public class ClientesControl : UserControl
         fluxoAcoes.Controls.Add(botaoExcluir);
         fluxoAcoes.Controls.Add(botaoPdf);
         fluxoAcoes.Controls.Add(botaoRepresentantes);
+
+        var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0, 2, 0, 2) };
+        botaoConfig.Dock = DockStyle.Fill;
+        painelEngrenagem.Controls.Add(botaoConfig);
+
         barraSuperior.Controls.Add(fluxoAcoes);
+        barraSuperior.Controls.Add(painelEngrenagem);
 
         // --- Barra de pesquisa -------------------------------------------------
         _campoPesquisa = new TextBox
@@ -189,6 +197,14 @@ public class ClientesControl : UserControl
         formulario.ShowDialog(this);
         if (formulario.HouveAlteracao)
             Recarregar(); // nomes de representante exibidos na grade podem ter mudado
+    }
+
+    private void AbrirConfiguracoes()
+    {
+        using var formulario = new ClientesConfigForm();
+        formulario.ShowDialog(this);
+        if (formulario.HouveAlteracao)
+            Recarregar();
     }
 
     private void GerarPdf()

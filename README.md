@@ -113,6 +113,14 @@ acentos/maiúsculas). O botão **"Gerar ficha (PDF)"** cria a ficha cadastral do
 cliente selecionado (dados do cliente, endereço, contato e representante) em
 `Fichas_Cadastrais`, ao lado do executável.
 
+**Importar CSV:** nas configurações (⚙) dá para importar de uma vez os
+cadastros de um arquivo `.csv` no formato do MILITARISYS antigo (18 colunas,
+sem cabeçalho — mas com cabeçalho também funciona, é detectado sozinho). Uma
+prévia mostra o que vai ser importado antes de confirmar: clientes com código
+já existente são pulados (nunca sobrescreve), código em branco gera um novo
+automaticamente, e representantes citados pelo nome que ainda não existem são
+criados na hora (só com o nome — complete os dados depois).
+
 ## Requisitos
 
 - Windows

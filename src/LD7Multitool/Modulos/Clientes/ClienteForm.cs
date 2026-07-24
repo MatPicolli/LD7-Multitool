@@ -265,7 +265,11 @@ public class ClienteForm : Form
             Font = Estilo.FontePadrao,
             ForeColor = Estilo.CorTexto,
         };
-        tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
+        // Coluna do rótulo em AutoSize: acomoda o texto inteiro em qualquer
+        // DPI/fonte (evita cortes tipo "RG / Insc." no lugar de "RG / Insc.
+        // Estadual" que aconteciam com largura fixa). MinimumSize garante uma
+        // largura mínima para os campos ficarem alinhados entre as linhas.
+        tabela.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         tabela.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         for (var i = 0; i < linhas.Length; i++)
@@ -274,10 +278,12 @@ public class ClienteForm : Form
             tabela.Controls.Add(new Label
             {
                 Text = linhas[i].Rotulo,
-                Dock = DockStyle.Fill,
+                AutoSize = true,
+                Anchor = AnchorStyles.Left,
                 TextAlign = ContentAlignment.MiddleLeft,
                 ForeColor = Estilo.CorTextoSuave,
-                Margin = new Padding(0),
+                Margin = new Padding(0, 0, 12, 0),
+                MinimumSize = new Size(132, 0),
             }, 0, i);
 
             var campo = linhas[i].Campo;

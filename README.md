@@ -105,11 +105,16 @@ inspirada em ERPs de gestão comercial:
 - Alternância **Pessoa Física / Jurídica**: mostra CPF (Física) ou CNPJ
   (Jurídica) conforme a escolha, e habilita os dados pessoais (RG, estado
   civil, sexo, data de nascimento, nacionalidade, naturalidade) só para
-  Física;
+  Física. O CPF/CNPJ é **formatado automaticamente enquanto você digita**
+  (`123.456.789-00` / `12.345.678/0001-90`); no banco fica gravado só com
+  dígitos;
+- **Busca por CNPJ** (Jurídica): o botão 🌐 ao lado do campo consulta a
+  Receita (BrasilAPI) e preenche razão social, nome fantasia, endereço,
+  telefone e e-mail de uma vez;
 - Razão social/nome, nome fantasia, inscrições estadual e municipal;
 - Endereço completo (logradouro, número, complemento, bairro) com **busca
   automática de CEP** (ViaCEP) — preenche logradouro, cidade, UF e bairro com
-  um clique no botão 📍;
+  um clique no botão 🌐;
 - Telefone, celular, site, dois e-mails e contato (nome/e-mail/telefone);
 - **Representante** vinculado, escolhido de um cadastro próprio de
   representantes (nome, e-mail, dois telefones), gerenciável pelo botão

@@ -433,37 +433,51 @@ public class ClienteForm : Form
 
         _botaoBuscarCnpj.Enabled = false;
         UseWaitCursor = true;
+        IReadOnlyList<RespostaFonte> respostas;
         try
         {
-            var resultado = await ServicoCnpj.BuscarAsync(digitos);
-            if (!resultado.Ok)
-            {
-                MessageBox.Show(this, resultado.Erro ?? "Não foi possível consultar o CNPJ.", "Consultar CNPJ",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var dados = resultado.Dados!;
-            _campoRazaoSocial.Text = dados.RazaoSocial;
-            _campoNomeFantasia.Text = dados.NomeFantasia;
-            _campoEndereco.Text = dados.Logradouro.ToUpperInvariant();
-            _campoNumero.Text = dados.Numero;
-            _campoComplemento.Text = dados.Complemento.ToUpperInvariant();
-            _campoBairro.Text = dados.Bairro.ToUpperInvariant();
-            if (dados.Cep.Length > 0)
-                _campoCep.Text = dados.Cep;
-            _campoCidade.Text = dados.Municipio.ToUpperInvariant();
-            _campoUf.Text = dados.Uf.ToUpperInvariant();
-            if (dados.Telefone.Length > 0)
-                _campoTelefone.Text = dados.Telefone;
-            if (dados.Email.Length > 0)
-                _campoEmail1.Text = dados.Email;
+            respostas = await ServicoCnpj.ConsultarAsync(digitos);
         }
         finally
         {
             _botaoBuscarCnpj.Enabled = _radioJuridica.Checked;
             UseWaitCursor = false;
         }
+
+        var comSucesso = respostas.Where(r => r.Dados is not null).ToList();
+        if (comSucesso.Count == 0)
+        {
+            var detalhes = string.Join("\n", respostas.Select(r => $"• {r.Fonte}: {r.Erro} ({r.TempoMs} ms)"));
+            MessageBox.Show(this,
+                "Nenhuma fonte retornou dados para esse CNPJ.\n\n" + detalhes,
+                "Consultar CNPJ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        using var comparativo = new ComparativoCnpjForm(_campoCnpj.Text.Trim(), respostas);
+        if (comparativo.ShowDialog(this) != DialogResult.OK || comparativo.DadosEscolhidos is null)
+            return;
+
+        PreencherComDadosCnpj(comparativo.DadosEscolhidos);
+    }
+
+    /// <summary>Joga os dados escolhidos no comparativo nos campos do cadastro.</summary>
+    private void PreencherComDadosCnpj(DadosCnpj dados)
+    {
+        _campoRazaoSocial.Text = dados.RazaoSocial;
+        _campoNomeFantasia.Text = dados.NomeFantasia;
+        _campoEndereco.Text = dados.Logradouro.ToUpperInvariant();
+        _campoNumero.Text = dados.Numero;
+        _campoComplemento.Text = dados.Complemento.ToUpperInvariant();
+        _campoBairro.Text = dados.Bairro.ToUpperInvariant();
+        if (dados.Cep.Length > 0)
+            _campoCep.Text = dados.Cep;
+        _campoCidade.Text = dados.Municipio.ToUpperInvariant();
+        _campoUf.Text = dados.Uf.ToUpperInvariant();
+        if (dados.Telefone.Length > 0)
+            _campoTelefone.Text = dados.Telefone;
+        if (dados.Email.Length > 0)
+            _campoEmail1.Text = dados.Email;
     }
 
     private async Task BuscarCepAsync()

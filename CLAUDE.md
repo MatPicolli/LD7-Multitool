@@ -90,9 +90,13 @@ EXISTS ...` em `Core/Database.cs` (ver abaixo). Nada mais.
   botão). Ao empilhar docks numa Form, siga o padrão já usado: adicione o
   controle `Fill` **primeiro**, depois os `Bottom`/`Top`.
 - **Serviços de rede** (`ServicoCep`, `ServicoCnpj`): mandam `User-Agent`
-  (CDNs recusam requisição sem ele), têm timeout e **retornam erro legível**
-  em vez de engolir exceção. `ServicoCnpj` tenta BrasilAPI e cai para
-  ReceitaWS como reserva.
+  (CDNs recusam requisição sem ele) e têm timeout. `ServicoCnpj` consulta
+  **várias fontes em paralelo** (BrasilAPI, ReceitaWS, CNPJ.ws, Minha Receita)
+  via `ConsultarAsync`, mede o tempo de cada uma (`RespostaFonte`) e consolida
+  os campos pelo voto da maioria (`Consolidar`/`DadosConsolidados`). A tela
+  `ComparativoCnpjForm` mostra o comparativo (semelhança + tempo) e deixa o
+  usuário escolher a fonte. Ao adicionar uma fonte nova, escreva um parser que
+  normalize para o `record DadosCnpj` comum.
 - **Leitura de PDF**: `PdfPig` (boletos/NF-e). **Geração de PDF**:
   `PdfSharpCore` (ficha do cliente) — escolhido por ser MIT e não depender de
   GDI+.

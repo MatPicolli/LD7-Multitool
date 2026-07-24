@@ -108,9 +108,12 @@ inspirada em ERPs de gestão comercial:
   Física. O CPF/CNPJ é **formatado automaticamente enquanto você digita**
   (`123.456.789-00` / `12.345.678/0001-90`); no banco fica gravado só com
   dígitos;
-- **Busca por CNPJ** (Jurídica): o botão 🌐 ao lado do campo consulta a
-  Receita (BrasilAPI) e preenche razão social, nome fantasia, endereço,
-  telefone e e-mail de uma vez;
+- **Busca por CNPJ** (Jurídica): o botão 🌐 ao lado do campo consulta
+  **várias fontes públicas ao mesmo tempo** (BrasilAPI, ReceitaWS, CNPJ.ws e
+  Minha Receita) e abre um **comparativo** mostrando, lado a lado, o que cada
+  uma retornou, o **tempo de resposta** de cada fonte e a **concordância**
+  (semelhança) por campo e média geral. Você preenche o cadastro com os dados
+  **consolidados** (valor da maioria) ou escolhendo uma fonte específica;
 - Razão social/nome, nome fantasia, inscrições estadual e municipal;
 - Endereço completo (logradouro, número, complemento, bairro) com **busca
   automática de CEP** (ViaCEP) — preenche logradouro, cidade, UF e bairro com

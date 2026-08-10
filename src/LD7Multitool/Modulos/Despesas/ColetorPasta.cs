@@ -92,7 +92,9 @@ public class ColetorPasta : IColetorDespesa
         try
         {
             using var documento = PdfDocument.Open(arquivo);
-            return documento.GetPages().Select(ContentOrderTextExtractor.GetText).ToList();
+            // Lambda em vez de grupo de método: GetText tem sobrecargas e o
+            // compilador não consegue escolher sozinho (mesmo caso do LeitorBoletoPdf).
+            return documento.GetPages().Select(p => ContentOrderTextExtractor.GetText(p)).ToList();
         }
         catch
         {

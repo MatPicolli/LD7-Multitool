@@ -78,7 +78,10 @@ public class ColetorEmail : IColetorDespesa
     /// <summary>Filtro IMAP: período + trecho do remetente + trecho do assunto.</summary>
     private static SearchQuery MontarBusca(Despesa despesa)
     {
-        var busca = SearchQuery.DeliveredAfter(DateTime.Today.AddDays(-DespesasConfigForm.DiasBusca));
+        // Tipado como SearchQuery (e não var): cada And() devolve um
+        // BinarySearchQuery, que não cabe no DateSearchQuery inicial.
+        SearchQuery busca = SearchQuery.DeliveredAfter(
+            DateTime.Today.AddDays(-DespesasConfigForm.DiasBusca));
 
         var remetente = despesa.EmailRemetente.Trim();
         if (remetente.Length > 0)
@@ -104,6 +107,9 @@ public class ColetorEmail : IColetorDespesa
                 continue;
 
             var caminho = await SalvarAnexoAsync(anexo, pastaAnexos, uid, nome, cancelamento);
+            if (caminho.Length == 0)
+                continue; // anexo declarado mas sem conteúdo — não há o que ler
+
             var paginas = LerPaginas(caminho);
 
             var achou = false;
@@ -139,9 +145,17 @@ public class ColetorEmail : IColetorDespesa
         return lancamentos;
     }
 
+    /// <summary>
+    /// Salva o anexo na pasta do item e devolve o caminho — ou string vazia se
+    /// a mensagem declarar o anexo sem trazer conteúdo (acontece quando o
+    /// servidor entrega só o cabeçalho).
+    /// </summary>
     private static async Task<string> SalvarAnexoAsync(
         MimePart anexo, string pasta, UniqueId uid, string nome, CancellationToken cancelamento)
     {
+        if (anexo.Content is not { } conteudo)
+            return "";
+
         Directory.CreateDirectory(pasta);
         // Prefixo com o UID da mensagem: dois meses com o mesmo nome de anexo
         // ("boleto.pdf") não se sobrescrevem.
@@ -151,7 +165,7 @@ public class ColetorEmail : IColetorDespesa
         if (!File.Exists(caminho))
         {
             await using var fluxo = File.Create(caminho);
-            await anexo.Content.DecodeToAsync(fluxo, cancelamento);
+            await conteudo.DecodeToAsync(fluxo, cancelamento);
         }
         return caminho;
     }
@@ -161,7 +175,9 @@ public class ColetorEmail : IColetorDespesa
         try
         {
             using var documento = PdfDocument.Open(caminho);
-            return documento.GetPages().Select(ContentOrderTextExtractor.GetText).ToList();
+            // Lambda em vez de grupo de método: GetText tem sobrecargas e o
+            // compilador não consegue escolher sozinho (mesmo caso do LeitorBoletoPdf).
+            return documento.GetPages().Select(p => ContentOrderTextExtractor.GetText(p)).ToList();
         }
         catch
         {

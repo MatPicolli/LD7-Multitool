@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <!-- Leitura da caixa de entrada (IMAP) na coleta automática de despesas. -->
+    <PackageReference Include="MailKit" Version="4.*" />
     <PackageReference Include="PdfPig" Version="0.1.9" />
     <!-- Geração de PDF (ficha cadastral de clientes) — MIT, sem dependência de GDI+. -->
     <PackageReference Include="PdfSharpCore" Version="1.3.*" />

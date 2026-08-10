@@ -50,10 +50,31 @@ EXISTS ...` em `Core/Database.cs` (ver abaixo). Nada mais.
 | 1     | `AutoEmail/` | Cadastro de clientes/e-mails e envio por SMTP com anexos (NF-e / NF-e+Boleto / Outro), modelos editáveis, histórico de envios. |
 | 2     | `Boletos/`   | CRUD de boletos com estados (Aberto/Pago/Cancelado/Protestado), importação de PDF (linha digitável FEBRABAN), vínculo automático de NF-e por número, alerta de vencimento com envio por e-mail. |
 | 3     | `Clientes/`  | Cadastro estilo ERP (reescrita do antigo "MILITARISYS"), Pessoa Física/Jurídica, busca de CEP (ViaCEP) e de CNPJ (BrasilAPI/ReceitaWS), importação de CSV, ficha em PDF, cadastro de representantes. |
+| 4     | `Despesas/`  | Despesas fixas da loja (água, luz, telefone, cartões...): catálogo dos itens com portal/credenciais, histórico de contas por item e **coleta automática** da última conta por pasta de downloads, e-mail (IMAP) ou consulta HTTP ao portal. |
 
 > Já existiu um módulo **Consulta NF-e/CT-e** (SEFAZ com certificado A1). Foi
 > **removido a pedido do usuário** por não funcionar bem. **Não reintroduza**
 > sem ele pedir explicitamente.
+
+### Coleta de despesas (ponto de extensão)
+
+O módulo `Despesas/` separa **item recorrente** (`Despesa` — o contrato: portal,
+credenciais, identificador) de **conta do mês** (`LancamentoDespesa` — o boleto:
+competência, vencimento, valor). A busca automática é plugável:
+`IColetorDespesa` + as implementações `ColetorPasta`, `ColetorEmail` e
+`ColetorHttp`, orquestradas por `ServicoColeta` (que também dedupe e grava).
+Para criar um coletor novo, implemente a interface e registre no array
+`ServicoColeta.Coletores`.
+
+Duplicidade é evitada pela `chave_origem` (única por despesa) — de preferência a
+própria linha digitável. **Não gere chave vazia.**
+
+> **Não embuta raspador de portal no código.** Cada site (Semasa, Celesc, Vivo,
+> Claro, PGMEI...) muda de layout e vários têm captcha/token/app — um raspador
+> fixo quebra e ninguém consegue consertar sem recompilar. O `ColetorHttp` lê
+> uma "receita" JSON gravada no próprio item (URL, campos, regex); para portal
+> difícil, o caminho recomendado ao usuário é `ColetorPasta` (ele baixa o PDF
+> como sempre e o programa lê a linha digitável).
 
 ## Camada Core (`src/LD7Multitool/Core/`)
 
@@ -72,6 +93,15 @@ EXISTS ...` em `Core/Database.cs` (ver abaixo). Nada mais.
   texto (foi um bug recorrente que o usuário reclamou).
 - **`ConfiguracaoRepository.cs`** — chave/valor genérico para configurações
   (pastas, modelos de e-mail, etc.).
+- **`Segredo.cs`** — cifra/decifra segredos gravados no banco (senhas de portal
+  e do IMAP) com a **DPAPI do Windows, escopo do usuário atual**. Como o
+  `dados.db` é portátil, senha em texto puro ali significaria distribuir a
+  senha junto. O preço: ao levar o banco para outra máquina/usuário,
+  `Revelar` devolve `""` e a senha precisa ser redigitada — **trate isso, não
+  estoure**. Nunca grave senha sem passar por aqui.
+  *Atenção:* `AutoEmail/ConfigSmtp.cs` tem a própria DPAPI, anterior a este
+  arquivo e **sem o prefixo `dpapi:`**. Não troque uma pela outra sem migrar —
+  `Revelar` devolveria o base64 cru como se fosse a senha.
 - **`IModulo.cs`** — o contrato descrito acima.
 
 ## Convenções de código
@@ -100,6 +130,16 @@ EXISTS ...` em `Core/Database.cs` (ver abaixo). Nada mais.
 - **Leitura de PDF**: `PdfPig` (boletos/NF-e). **Geração de PDF**:
   `PdfSharpCore` (ficha do cliente) — escolhido por ser MIT e não depender de
   GDI+.
+- **Linha digitável FEBRABAN**: valor e vencimento saem dos 14 dígitos finais
+  (4 = fator de vencimento, 10 = centavos), com o ciclo reiniciado em 1000 em
+  22/02/2025. Isso vale para boleto de qualquer banco e está em dois lugares:
+  `Boletos/LeitorBoletoPdf.cs` (a partir de PDF) e `Despesas/Febraban.cs` (a
+  partir de texto de página/HTML). Mexeu em um, confira o outro.
+- **Nada de segredo versionado**: senhas, CPF/CNPJ, número de contrato/unidade
+  consumidora e links com token (ex.: boleto de condomínio) **não entram no
+  código** — nem em seed, nem em teste, nem em comentário. Ver
+  `Despesas/CatalogoInicial.cs`: ele semeia só nome, fornecedor, URL pública e
+  instruções; o resto o usuário preenche na tela e fica só no `dados.db`.
 
 ## Dependências (NuGet) e por que estão fixadas
 
@@ -109,6 +149,11 @@ regrida**:
 - `SQLitePCLRaw.bundle_e_sqlite3` **fixado em 2.1.11** de propósito, para
   corrigir a vulnerabilidade **NU1903 / GHSA-2m69-gcr7-jv3q**. Não abaixe.
 - `Microsoft.Data.Sqlite` 9.0.0, `PdfPig` 0.1.9, `PdfSharpCore` 1.3.*.
+- `MailKit` 4.* — cliente **IMAP** da coleta de despesas (o .NET não tem um).
+  Traz o MimeKit junto. É também o caminho natural se um dia o envio SMTP do
+  Auto-Email precisar de OAuth2.
+- **DPAPI (`ProtectedData`) não precisa de pacote** — vem com o
+  `net10.0-windows`. Não adicione `System.Security.Cryptography.ProtectedData`.
 - Ao lidar com certificado (se algum dia voltar), use `X509CertificateLoader`
   em vez de `new X509Certificate2(...)` (SYSLIB0057).
 

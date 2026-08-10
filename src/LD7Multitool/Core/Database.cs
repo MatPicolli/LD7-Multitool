@@ -120,6 +120,46 @@ public static class Database
                 contato_telefone    TEXT NOT NULL DEFAULT '',
                 representante_id    INTEGER REFERENCES representantes(id) ON DELETE SET NULL
             );
+
+            CREATE TABLE IF NOT EXISTS despesas (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome            TEXT NOT NULL,
+                fornecedor      TEXT NOT NULL DEFAULT '',
+                forma           INTEGER NOT NULL DEFAULT 0,
+                metodo_coleta   INTEGER NOT NULL DEFAULT 0,
+                url_portal      TEXT NOT NULL DEFAULT '',
+                identificador   TEXT NOT NULL DEFAULT '',
+                documento       TEXT NOT NULL DEFAULT '',
+                login           TEXT NOT NULL DEFAULT '',
+                senha           TEXT NOT NULL DEFAULT '',
+                dia_vencimento  INTEGER NOT NULL DEFAULT 0,
+                padrao_arquivo  TEXT NOT NULL DEFAULT '',
+                email_remetente TEXT NOT NULL DEFAULT '',
+                email_assunto   TEXT NOT NULL DEFAULT '',
+                config_http     TEXT NOT NULL DEFAULT '',
+                observacoes     TEXT NOT NULL DEFAULT '',
+                ativo           INTEGER NOT NULL DEFAULT 1,
+                ordem           INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS despesas_lancamentos (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                despesa_id      INTEGER NOT NULL REFERENCES despesas(id) ON DELETE CASCADE,
+                competencia     TEXT NOT NULL DEFAULT '',
+                vencimento      TEXT NOT NULL,
+                valor           TEXT NOT NULL DEFAULT '0',
+                linha_digitavel TEXT NOT NULL DEFAULT '',
+                situacao        INTEGER NOT NULL DEFAULT 0,
+                caminho_arquivo TEXT NOT NULL DEFAULT '',
+                origem          INTEGER NOT NULL DEFAULT 0,
+                coletado_em     TEXT NOT NULL DEFAULT '',
+                chave_origem    TEXT NOT NULL DEFAULT ''
+            );
+
+            -- A chave de origem é o que impede a coleta de cadastrar o mesmo
+            -- boleto duas vezes (ela nunca fica vazia — ver LancamentoDespesaRepository).
+            CREATE UNIQUE INDEX IF NOT EXISTS ix_despesas_lancamentos_chave
+                ON despesas_lancamentos(despesa_id, chave_origem);
             """;
         comando.ExecuteNonQuery();
 

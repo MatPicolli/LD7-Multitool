@@ -139,6 +139,67 @@ já existente são pulados (nunca sobrescreve), código em branco gera um novo
 automaticamente, e representantes citados pelo nome que ainda não existem são
 criados na hora (só com o nome — complete os dados depois).
 
+### 💡 Despesas
+Controle das **despesas fixas da loja** (água, luz, telefone, internet,
+condomínio, cartões, impostos): para cada item, onde buscar a conta, com quais
+dados de acesso, e qual foi a **última conta** que chegou.
+
+A tela principal mostra **uma linha por item** com a última competência,
+vencimento, valor e situação. As cores contam a história de relance:
+
+- **laranja** — ainda não chegou a conta deste mês (falta buscar);
+- **vermelho** — a última conta está em aberto e já venceu;
+- **verde** — paga; **cinza** — item inativo ou conta cancelada.
+
+O rodapé resume quantos itens estão sem a conta do mês e o total em aberto.
+Os filtros permitem ver só "Falta a conta do mês", "Em aberto", "Vencidos" ou
+"Com coleta automática".
+
+**Na primeira abertura**, o módulo já vem com os 25 itens do relatório de
+despesas da loja (nome, fornecedor, endereço do portal e as instruções de como
+tirar a segunda via). Por segurança, **nenhuma senha, CPF/CNPJ ou número de
+contrato vem preenchido** — esses dados são digitados uma vez em "Editar item"
+e ficam só no `dados.db` da sua máquina (a senha é gravada cifrada com DPAPI).
+
+**Cadastro de cada item:** nome, fornecedor, como a conta costuma vir (portal /
+e-mail / alguém pega / telefone), dia do vencimento, endereço do portal,
+identificador (unidade consumidora, matrícula, código da conta), CPF/CNPJ,
+login, senha e observações. Pelo clique-direito dá para **abrir o portal no
+navegador**, **copiar o login**, **copiar a senha** ou **copiar a linha
+digitável** da última conta — sem precisar procurar num papel.
+
+**Lançar conta:** o botão "Lançar conta" abre a conta do mês (competência,
+vencimento, valor, linha digitável, situação). O botão **"Ler de um PDF..."**
+lê o boleto baixado e preenche valor e vencimento sozinho, pela linha digitável
+(padrão FEBRABAN — vale para qualquer banco). "Contas do item" mostra todo o
+histórico daquele item, com marcar como pago, editar e abrir o PDF.
+
+**Buscar contas do mês (coleta automática):** o botão da barra superior varre
+de uma vez todos os itens que têm coleta ligada e mostra um relatório do que
+encontrou. Cada item escolhe seu método em "Editar item" → aba "Coleta
+automática":
+
+- **Pasta de downloads** — o programa procura na pasta configurada (⚙) os PDFs
+  que casam com uma máscara (ex.: `celesc*haras*.pdf`) e lança valor e
+  vencimento lidos da linha digitável. **É o caminho recomendado para portais
+  com login complicado**: você baixa a segunda via como sempre fez e o resto é
+  automático;
+- **E-mail (IMAP)** — lê a caixa de entrada configurada no ⚙, filtra pelo
+  remetente e/ou assunto, salva os anexos em PDF e lança as contas. Cobre os
+  itens que "vêm por e-mail" (Generation, Embratel, Claro internet, FGTS,
+  previdência...);
+- **Portal (HTTP)** — consulta o site seguindo uma "receita" em JSON gravada no
+  próprio item (endereço, campos do formulário e expressões de extração).
+  Serve para portais simples, de formulário aberto. Sites com captcha,
+  token/SMS ou aplicativo **não funcionam por aqui** — nesses, use a pasta de
+  downloads.
+
+A mesma conta nunca é cadastrada duas vezes: cada lançamento guarda uma chave
+de origem (de preferência a própria linha digitável).
+
+> Para o IMAP no Gmail/Outlook com verificação em duas etapas é preciso uma
+> **senha de aplicativo** — a senha normal da conta é recusada.
+
 ## Requisitos
 
 - Windows
@@ -192,8 +253,11 @@ src/LD7Multitool/
 ├── Core/
 │   ├── IModulo.cs              # contrato dos módulos
 │   ├── Database.cs             # SQLite + criação do esquema
+│   ├── Segredo.cs              # cifra as senhas gravadas no banco (DPAPI)
 │   └── ConfiguracaoRepository.cs
 └── Modulos/
     ├── AutoEmail/              # módulo de envio de e-mails
-    └── Boletos/                # módulo gerenciador de boletos
+    ├── Boletos/                # módulo gerenciador de boletos
+    ├── Clientes/               # módulo de cadastro de clientes
+    └── Despesas/               # módulo das despesas fixas da loja
 ```

@@ -217,6 +217,12 @@ ordem das páginas**: clique primeiro na folha 1, depois na folha 2, e assim
 por diante (dá para reordenar ou tirar uma foto da seleção no painel da
 direita antes de confirmar).
 
+**Clique com o botão direito** numa miniatura para abrir um visualizador em
+tela cheia — arraste com o botão esquerdo para mover a imagem e use a roda do
+mouse para dar zoom (centrado onde o ponteiro está), útil para ler valores,
+CNPJ ou qualquer letra miúda da nota. Clique com o botão direito de novo (ou
+Esc) para fechar e voltar à galeria.
+
 Depois de selecionar, escolha a **empresa** (uma caixa com autocompletar das
 pastas já existentes — digitar um nome novo oferece criar a pasta) e a
 **data de emissão**, confira a prévia do caminho final e clique em

@@ -51,7 +51,7 @@ EXISTS ...` em `Core/Database.cs` (ver abaixo). Nada mais.
 | 2     | `Boletos/`   | CRUD de boletos com estados (Aberto/Pago/Cancelado/Protestado), importação de PDF (linha digitável FEBRABAN), vínculo automático de NF-e por número, alerta de vencimento com envio por e-mail. |
 | 3     | `Clientes/`  | Cadastro estilo ERP (reescrita do antigo "MILITARISYS"), Pessoa Física/Jurídica, busca de CEP (ViaCEP) e de CNPJ (BrasilAPI/ReceitaWS), importação de CSV, ficha em PDF, cadastro de representantes. |
 | 4     | `Despesas/`  | Despesas fixas da loja (água, luz, telefone, cartões...): catálogo dos itens com portal/credenciais, histórico de contas por item e **coleta automática** da última conta por pasta de downloads, e-mail (IMAP) ou consulta HTTP ao portal. |
-| 5     | `NotasEntrada/` | Organiza fotos de notas fiscais de entrada: galeria de miniaturas da pasta "para separar", seleção com ordem de página (clique = próxima página) e separação para `Empresa/aaaa/dd-MM-aaaa(.jpg ou pasta com 01.jpg, 02.jpg...)`. Página nova de uma nota já separada vira a próxima numeração em vez de travar. |
+| 5     | `NotasEntrada/` | Organiza fotos de notas fiscais de entrada: galeria de miniaturas da pasta "para separar", seleção com ordem de página (clique = próxima página), visualizador com zoom/pan (botão direito abre/fecha) e separação para `Empresa/aaaa/dd-MM-aaaa(.jpg ou pasta com 01.jpg, 02.jpg...)`. Página nova de uma nota já separada vira a próxima numeração em vez de travar. |
 
 > Já existiu um módulo **Consulta NF-e/CT-e** (SEFAZ com certificado A1). Foi
 > **removido a pedido do usuário** por não funcionar bem. **Não reintroduza**

@@ -218,10 +218,12 @@ por diante (dá para reordenar ou tirar uma foto da seleção no painel da
 direita antes de confirmar).
 
 **Clique com o botão direito** numa miniatura para abrir um visualizador em
-tela cheia — arraste com o botão esquerdo para mover a imagem e use a roda do
-mouse para dar zoom (centrado onde o ponteiro está), útil para ler valores,
-CNPJ ou qualquer letra miúda da nota. Clique com o botão direito de novo (ou
-Esc) para fechar e voltar à galeria.
+**janela flutuante** (dimensionada pela resolução da tela, não pelo tamanho da
+janela do programa, e redimensionável) — arraste com o botão esquerdo para
+mover a imagem e use a roda do mouse para dar zoom (centrado onde o ponteiro
+está), útil para ler valores, CNPJ ou qualquer letra miúda da nota. Clique com
+o botão direito de novo, Esc, ou feche pela barra de título para voltar à
+galeria.
 
 Depois de selecionar, escolha a **empresa** (uma caixa com autocompletar das
 pastas já existentes — digitar um nome novo oferece criar a pasta) e a

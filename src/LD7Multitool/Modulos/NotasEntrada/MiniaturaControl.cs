@@ -69,20 +69,20 @@ public class MiniaturaControl : UserControl
         Controls.Add(_nome);
         Controls.Add(_selo);
 
-        Click += (_, e) => Alternado?.Invoke(this, e);
-        _imagem.Click += (_, e) => Alternado?.Invoke(this, e);
-        _nome.Click += (_, e) => Alternado?.Invoke(this, e);
-
-        // Click não dispara para o botão direito — por isso o zoom usa
-        // MouseClick, que informa qual botão foi pressionado.
-        MouseClick += TratarCliqueDireito;
-        _imagem.MouseClick += TratarCliqueDireito;
-        _nome.MouseClick += TratarCliqueDireito;
+        // Um único evento (MouseClick) para os dois gestos: o Click comum do
+        // WinForms dispara para QUALQUER botão do mouse (inclusive o
+        // direito), então usá-lo para seleção fazia o botão direito também
+        // selecionar/desselecionar a miniatura antes de abrir o zoom.
+        MouseClick += TratarClique;
+        _imagem.MouseClick += TratarClique;
+        _nome.MouseClick += TratarClique;
     }
 
-    private void TratarCliqueDireito(object? remetente, MouseEventArgs e)
+    private void TratarClique(object? remetente, MouseEventArgs e)
     {
-        if (e.Button == MouseButtons.Right)
+        if (e.Button == MouseButtons.Left)
+            Alternado?.Invoke(this, EventArgs.Empty);
+        else if (e.Button == MouseButtons.Right)
             ZoomSolicitado?.Invoke(this, EventArgs.Empty);
     }
 

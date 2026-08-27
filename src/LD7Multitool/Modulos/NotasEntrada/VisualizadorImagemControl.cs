@@ -23,6 +23,15 @@ public class VisualizadorImagemControl : Control
     private Point _ultimoMouse;
     private bool _arrastando;
 
+    // Enquanto o usuário arrasta ou rola a roda, desenha com interpolação
+    // barata (Bilinear) em vez de HighQualityBicubic — a mais lenta do GDI+ —
+    // porque redesenhar a imagem inteira em alta qualidade a cada movimento
+    // é o que deixava o zoom/arrasto travado. Um temporizador "afina" o
+    // desenho de volta assim que o usuário para (solta o botão ou some
+    // alguns milissegundos sem girar a roda).
+    private bool _interagindo;
+    private readonly System.Windows.Forms.Timer _temporizadorNitidez;
+
     /// <summary>Disparado quando o botão direito é clicado — quem decide fechar o visualizador é o dono.</summary>
     public event EventHandler? FechamentoSolicitado;
 
@@ -37,6 +46,14 @@ public class VisualizadorImagemControl : Control
             ControlStyles.Selectable | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer |
             ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw,
             true);
+
+        _temporizadorNitidez = new System.Windows.Forms.Timer { Interval = 180 };
+        _temporizadorNitidez.Tick += (_, _) =>
+        {
+            _temporizadorNitidez.Stop();
+            _interagindo = false;
+            Invalidate();
+        };
     }
 
     /// <summary>Encaixa a imagem inteira no espaço disponível e centraliza — chamado quando o controle é exibido.</summary>
@@ -55,8 +72,8 @@ public class VisualizadorImagemControl : Control
 
     protected override void OnPaint(PaintEventArgs e)
     {
-        e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        e.Graphics.InterpolationMode = _interagindo ? InterpolationMode.Bilinear : InterpolationMode.HighQualityBicubic;
+        e.Graphics.PixelOffsetMode = _interagindo ? PixelOffsetMode.HighSpeed : PixelOffsetMode.HighQuality;
         e.Graphics.DrawImage(_imagem, _origem.X, _origem.Y, _imagem.Width * _zoom, _imagem.Height * _zoom);
     }
 
@@ -81,6 +98,8 @@ public class VisualizadorImagemControl : Control
         if (e.Button == MouseButtons.Left)
         {
             _arrastando = true;
+            _interagindo = true;
+            _temporizadorNitidez.Stop(); // não deixa "afinar" no meio do arrasto
             _ultimoMouse = e.Location;
         }
     }
@@ -99,8 +118,12 @@ public class VisualizadorImagemControl : Control
     protected override void OnMouseUp(MouseEventArgs e)
     {
         base.OnMouseUp(e);
-        if (e.Button == MouseButtons.Left)
-            _arrastando = false;
+        if (e.Button != MouseButtons.Left)
+            return;
+
+        _arrastando = false;
+        _interagindo = false;
+        Invalidate(); // redesenha em alta qualidade assim que o botão é solto
     }
 
     protected override void OnMouseWheel(MouseEventArgs e)
@@ -117,12 +140,25 @@ public class VisualizadorImagemControl : Control
         _zoom = Math.Clamp(_zoom * fator, ZoomMinimo, ZoomMaximo);
 
         _origem = new PointF(e.X - pontoImagemX * _zoom, e.Y - pontoImagemY * _zoom);
+
+        // Rola-se a roda várias vezes seguidas num zoom só — o temporizador
+        // adia a "afinada" até um instante depois da última rolagem.
+        _interagindo = true;
         Invalidate();
+        _temporizadorNitidez.Stop();
+        _temporizadorNitidez.Start();
     }
 
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
         Invalidate();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+            _temporizadorNitidez.Dispose();
+        base.Dispose(disposing);
     }
 }

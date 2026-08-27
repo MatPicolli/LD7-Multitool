@@ -200,6 +200,33 @@ de origem (de preferência a própria linha digitável).
 > Para o IMAP no Gmail/Outlook com verificação em duas etapas é preciso uma
 > **senha de aplicativo** — a senha normal da conta é recusada.
 
+### 🗂️ Notas de Entrada
+Organiza as **fotos das notas fiscais de entrada** (compras) que chegam numa
+pasta única e precisam ser separadas por empresa.
+
+Nas configurações (⚙) você aponta a **pasta raiz**, que deve conter:
+
+- uma pasta `---------- PARA SEPARAR` com as fotos ainda não organizadas (.jpg);
+- uma pasta por empresa (razão social) — dentro dela, uma pasta por ano e,
+  dentro do ano, `dd-MM-aaaa.jpg` (nota de uma folha) ou uma pasta
+  `dd-MM-aaaa` com `01.jpg`, `02.jpg`... (nota de várias folhas).
+
+A tela mostra uma **galeria de miniaturas** com tudo que está pendente. Clicar
+numa foto seleciona ela e mostra um selo numerado — **a ordem de clique vira a
+ordem das páginas**: clique primeiro na folha 1, depois na folha 2, e assim
+por diante (dá para reordenar ou tirar uma foto da seleção no painel da
+direita antes de confirmar).
+
+Depois de selecionar, escolha a **empresa** (uma caixa com autocompletar das
+pastas já existentes — digitar um nome novo oferece criar a pasta) e a
+**data de emissão**, confira a prévia do caminho final e clique em
+**"Separar (mover)"**. Uma folha só vira arquivo direto; duas ou mais viram
+uma pasta com `01`, `02`... Se depois aparecer mais uma página de uma nota que
+já foi separada (mesma empresa/data), ela entra como a próxima numeração —
+inclusive convertendo uma nota de folha única em pasta automaticamente — sem
+travar nem sobrescrever nada. Qualquer erro no meio do caminho desfaz o que já
+tinha sido movido.
+
 ## Requisitos
 
 - Windows
@@ -259,5 +286,6 @@ src/LD7Multitool/
     ├── AutoEmail/              # módulo de envio de e-mails
     ├── Boletos/                # módulo gerenciador de boletos
     ├── Clientes/               # módulo de cadastro de clientes
-    └── Despesas/               # módulo das despesas fixas da loja
+    ├── Despesas/               # módulo das despesas fixas da loja
+    └── NotasEntrada/           # organiza fotos de notas fiscais de entrada
 ```

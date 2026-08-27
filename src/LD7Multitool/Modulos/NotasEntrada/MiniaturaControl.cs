@@ -17,8 +17,11 @@ public class MiniaturaControl : UserControl
 
     public string Caminho { get; }
 
-    /// <summary>Disparado a cada clique — quem decide se seleciona/deseleciona é o dono da galeria.</summary>
+    /// <summary>Disparado a cada clique (botão esquerdo) — quem decide se seleciona/deseleciona é o dono da galeria.</summary>
     public event EventHandler? Alternado;
+
+    /// <summary>Disparado no clique com o botão direito — o dono da galeria abre o visualizador com zoom.</summary>
+    public event EventHandler? ZoomSolicitado;
 
     public MiniaturaControl(string caminho)
     {
@@ -69,6 +72,18 @@ public class MiniaturaControl : UserControl
         Click += (_, e) => Alternado?.Invoke(this, e);
         _imagem.Click += (_, e) => Alternado?.Invoke(this, e);
         _nome.Click += (_, e) => Alternado?.Invoke(this, e);
+
+        // Click não dispara para o botão direito — por isso o zoom usa
+        // MouseClick, que informa qual botão foi pressionado.
+        MouseClick += TratarCliqueDireito;
+        _imagem.MouseClick += TratarCliqueDireito;
+        _nome.MouseClick += TratarCliqueDireito;
+    }
+
+    private void TratarCliqueDireito(object? remetente, MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Right)
+            ZoomSolicitado?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Define a miniatura já pronta (gerada em segundo plano); dono anterior é liberado.</summary>

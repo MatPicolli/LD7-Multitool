@@ -291,6 +291,7 @@ public class NotasEntradaControl : UserControl
         {
             var miniatura = new MiniaturaControl(caminho);
             miniatura.Alternado += (remetente, _) => AlternarSelecao((MiniaturaControl)remetente!);
+            miniatura.ZoomSolicitado += (_, _) => VisualizadorImagemForm.Exibir(FindForm() ?? (IWin32Window)this, this, caminho);
             _controles[caminho] = miniatura;
             _galeria.Controls.Add(miniatura);
         }

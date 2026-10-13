@@ -169,8 +169,9 @@ data em que a comissão foi paga.
   sozinho, é só imprimir (Ctrl+P).
 - **Fechamento do mês** (a tabela auxiliar à direita da aba da planilha): escolha
   o período de vencimento e aparecem as parcelas cuja comissão ainda não foi
-  paga ao vendedor — marcadas as de status "Pago", desmarcadas as "Não pago"
-  (cliente ainda não pagou; marque se for pagar também). Mostra a **SOMA**, gera
+  paga ao vendedor, com o **Nº** da tabela. Clique nas linhas para marcar ou
+  desmarcar (as destacadas em azul entram na conta); vêm marcadas as de status
+  "Pago" e desmarcadas as "Não pago" (cliente ainda não pagou). Mostra a **SOMA**, gera
   um **PDF** com a tabela para o vendedor (em `Fechamentos_Comissao`, ao lado do
   executável), **copia a tabela** para colar no Excel/WhatsApp e **registra o
   pagamento** (preenche a data em "pag. comissão"). O período já vem sugerido:

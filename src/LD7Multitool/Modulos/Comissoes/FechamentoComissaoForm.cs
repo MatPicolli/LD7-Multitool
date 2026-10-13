@@ -101,24 +101,25 @@ public class FechamentoComissaoForm : Form
             Padding = new Padding(14, 0, 12, 0),
             TextAlign = ContentAlignment.MiddleLeft,
             ForeColor = Estilo.CorTextoSuave,
-            Text = "Aparecem as parcelas cuja comissão ainda não foi paga ao vendedor. Vêm marcadas as de " +
-                   "status \"Pago\" (cliente pagou); as \"Não pago\" vêm desmarcadas — marque se for pagar também.",
+            Text = "Clique nas linhas para marcar/desmarcar — as destacadas em azul entram na SOMA. Vêm marcadas " +
+                   "as de status \"Pago\" (cliente pagou); as \"Não pago\" vêm desmarcadas.",
         };
 
         // --- Grade -----------------------------------------------------------------
-        _grade = new DataGridView
+        _grade = new GradeMarcavel
         {
             Dock = DockStyle.Fill,
+            ReadOnly = true,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
             AllowUserToResizeRows = false,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            MultiSelect = false,
+            MultiSelect = true,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             RowHeadersVisible = false,
         };
         Estilo.EstilizarGrade(_grade);
-        _grade.Columns.Add(new DataGridViewCheckBoxColumn { Name = "incluir", HeaderText = "Pagar", FillWeight = 34 });
+        AdicionarColuna("numero", "Nº", 30, direita: true);
         AdicionarColuna("nf", "Nota fiscal", 58);
         AdicionarColuna("boleto", "Nº b", 50);
         AdicionarColuna("cliente", "Cliente", 150);
@@ -130,33 +131,11 @@ public class FechamentoComissaoForm : Form
         AdicionarColuna("comissao", "Comissão", 64, direita: true);
         AdicionarColuna("status", "Status", 54);
 
-        // Só a caixinha é editável; ela confirma na hora para a SOMA acompanhar.
-        _grade.CurrentCellDirtyStateChanged += (_, _) =>
+        // A marcação é a própria seleção (destaque) da linha.
+        _grade.SelectionChanged += (_, _) =>
         {
-            if (_grade.IsCurrentCellDirty)
-                _grade.CommitEdit(DataGridViewDataErrorContexts.Commit);
-        };
-        _grade.CellValueChanged += (_, e) =>
-        {
-            if (!_carregando && e.RowIndex >= 0 && e.ColumnIndex == 0)
-            {
-                PintarLinha(_grade.Rows[e.RowIndex]);
+            if (!_carregando)
                 AtualizarSoma();
-            }
-        };
-        // Clicar em qualquer parte da linha (ou espaço) alterna a caixinha.
-        _grade.CellClick += (_, e) =>
-        {
-            if (e.RowIndex >= 0 && e.ColumnIndex > 0)
-                Alternar(_grade.Rows[e.RowIndex]);
-        };
-        _grade.KeyDown += (_, e) =>
-        {
-            if (e.KeyCode == Keys.Space && _grade.CurrentRow is { } linha && _grade.CurrentCell?.ColumnIndex != 0)
-            {
-                Alternar(linha);
-                e.Handled = true;
-            }
         };
 
         var painelGrade = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12, 0, 12, 0) };
@@ -215,6 +194,8 @@ public class FechamentoComissaoForm : Form
         CancelButton = botaoFechar;
 
         Carregar();
+        // Ao aparecer, o WinForms seleciona sozinho a linha atual; refaz a marcação.
+        Shown += (_, _) => AplicarMarcacaoPadrao();
     }
 
     private static Label Rotulo(string texto, ContentAlignment alinhamento) => new()
@@ -247,19 +228,25 @@ public class FechamentoComissaoForm : Form
     private DateTime De => _campoDe.Value.Date;
     private DateTime Ate => _campoAte.Value.Date;
 
-    private List<Comissao> Marcadas => _grade.Rows.Cast<DataGridViewRow>()
-        .Where(r => r.Cells[0].Value is true)
+    private List<Comissao> Marcadas => _grade.SelectedRows.Cast<DataGridViewRow>()
+        .OrderBy(r => r.Index)
         .Select(r => (Comissao)r.Tag!)
         .ToList();
 
     private void Carregar()
     {
+        // "Nº" igual ao da tela principal: posição na ordem de vencimento de todas as parcelas.
+        var numeroPorId = _todas
+            .OrderBy(c => c.Vencimento).ThenBy(c => c.Id)
+            .Select((c, i) => (c.Id, Numero: i + 1))
+            .ToDictionary(p => p.Id, p => p.Numero);
+
         _carregando = true;
         _grade.Rows.Clear();
         foreach (var c in FechamentoComissoes.Candidatas(_todas, De, Ate, _campoAnteriores.Checked))
         {
             var indice = _grade.Rows.Add(
-                FechamentoComissoes.MarcadaPorPadrao(c),
+                numeroPorId.GetValueOrDefault(c.Id),
                 c.NotaFiscal,
                 c.NumeroBoleto,
                 c.Cliente,
@@ -275,34 +262,29 @@ public class FechamentoComissaoForm : Form
             // Pendência de antes do período: destaca a data, para não passar batido.
             if (c.Vencimento.Date < De)
                 linha.Cells["vencimento"].Style.ForeColor = Estilo.CorPerigo;
-            PintarLinha(linha);
         }
         _carregando = false;
-        _grade.ClearSelection();
-        AtualizarSoma();
+        AplicarMarcacaoPadrao();
     }
 
-    /// <summary>Desmarcadas ficam em cinza (fora da SOMA); marcadas, na cor normal.</summary>
-    private static void PintarLinha(DataGridViewRow linha) =>
-        linha.DefaultCellStyle.ForeColor = linha.Cells[0].Value is true ? Estilo.CorTexto : Estilo.CorTextoSuave;
-
-    private void Alternar(DataGridViewRow linha)
+    /// <summary>Destaca (marca) as de status "Pago"; as "Não pago" ficam sem destaque.</summary>
+    private void AplicarMarcacaoPadrao()
     {
-        _grade.EndEdit();
-        linha.Cells[0].Value = linha.Cells[0].Value is not true;
+        _carregando = true;
+        _grade.ClearSelection();
+        foreach (DataGridViewRow linha in _grade.Rows)
+            linha.Selected = FechamentoComissoes.MarcadaPorPadrao((Comissao)linha.Tag!);
+        _carregando = false;
+        AtualizarSoma();
     }
 
     private void MarcarTodas(bool marcar)
     {
-        _grade.EndEdit();
-        _carregando = true;
-        foreach (DataGridViewRow linha in _grade.Rows)
-        {
-            linha.Cells[0].Value = marcar;
-            PintarLinha(linha);
-        }
-        _carregando = false;
-        AtualizarSoma();
+        if (marcar)
+            _grade.SelectAll();
+        else
+            _grade.ClearSelection();
+        _grade.Focus();
     }
 
     private void AtualizarSoma()
@@ -379,4 +361,57 @@ public class FechamentoComissaoForm : Form
     }
 
     private static string Moeda(decimal valor) => valor.ToString("C2", CulturaBr);
+
+    /// <summary>
+    /// Grade em que o clique simples liga/desliga o destaque da linha, sem
+    /// precisar segurar Ctrl (Ctrl/Shift continuam funcionando como sempre).
+    /// Espaço alterna a linha atual. As setas só movem o cursor, sem desfazer
+    /// a marcação.
+    /// </summary>
+    private sealed class GradeMarcavel : DataGridView
+    {
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            var alvo = HitTest(e.X, e.Y);
+            if (e.Button == MouseButtons.Left && ModifierKeys == Keys.None &&
+                alvo.Type == DataGridViewHitTestType.Cell && alvo.RowIndex >= 0)
+            {
+                Focus();
+                var linha = Rows[alvo.RowIndex];
+                linha.Selected = !linha.Selected;
+                return;
+            }
+            // Clique no espaço vazio da grade não desfaz a marcação.
+            if (alvo.Type == DataGridViewHitTestType.None)
+            {
+                Focus();
+                return;
+            }
+            base.OnMouseDown(e);
+        }
+
+        protected override bool ProcessDataGridViewKey(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space && e.Modifiers == Keys.None && CurrentRow is { } atual)
+            {
+                atual.Selected = !atual.Selected;
+                return true;
+            }
+            // Setas sem Shift: move a linha atual preservando a seleção.
+            if (e.Modifiers == Keys.None && e.KeyCode is Keys.Up or Keys.Down && CurrentCell is { } celula)
+            {
+                var destino = celula.RowIndex + (e.KeyCode == Keys.Up ? -1 : 1);
+                if (destino >= 0 && destino < Rows.Count)
+                {
+                    var marcadas = SelectedRows.Cast<DataGridViewRow>().ToList();
+                    CurrentCell = Rows[destino].Cells[celula.ColumnIndex];
+                    ClearSelection();
+                    foreach (var linha in marcadas)
+                        linha.Selected = true;
+                }
+                return true;
+            }
+            return base.ProcessDataGridViewKey(e);
+        }
+    }
 }

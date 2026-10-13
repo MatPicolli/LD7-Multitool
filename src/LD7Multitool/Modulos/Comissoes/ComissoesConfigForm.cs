@@ -29,7 +29,7 @@ public class ComissoesConfigForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(600, 500);
+        ClientSize = new Size(600, 440);
 
         _campoPercentual = ComissaoForm.CriarCampoPercentual(PercentualPadrao);
         _campoPercentual.Dock = DockStyle.None;
@@ -46,8 +46,11 @@ public class ComissoesConfigForm : Form
             Margin = new Padding(0, 4, 0, 0),
         });
 
-        var botaoImportar = Estilo.BotaoPadrao("Selecionar planilha (.xlsx)...");
-        botaoImportar.Margin = new Padding(0, 4, 0, 0);
+        // O botão vem logo abaixo do título (antes do texto de ajuda): com a
+        // escala do Windows acima de 100% o texto cresce, e um botão no fim da
+        // página acabava escondido atrás da barra Fechar/Salvar.
+        var botaoImportar = Estilo.BotaoPrimario("Importar planilha (.xlsx)...");
+        botaoImportar.Margin = new Padding(0, 0, 0, 8);
         botaoImportar.Click += (_, _) => SelecionarEImportar();
 
         var conteudo = new FlowLayoutPanel
@@ -55,25 +58,23 @@ public class ComissoesConfigForm : Form
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
+            // Rolagem como garantia: nada fica inalcançável em telas menores.
+            AutoScroll = true,
             Padding = new Padding(16),
             BackColor = Estilo.CorSuperficie,
         };
-        conteudo.Controls.Add(CriarTitulo("Comissão padrão"));
+        conteudo.Controls.Add(CriarTitulo("Importar da planilha do Excel"));
+        conteudo.Controls.Add(botaoImportar);
+        conteudo.Controls.Add(CriarAjuda(
+            "Escolha o arquivo e depois a aba (ex.: \"2026 (NOVA MILITAR)\"); uma prévia é " +
+            "mostrada antes de confirmar. Serve para as abas de qualquer ano, e parcelas " +
+            "que já existem são puladas — dá para importar várias abas sem duplicar. " +
+            "Só o formato .xlsx."));
+        conteudo.Controls.Add(CriarTitulo("Comissão padrão", topo: 18));
         conteudo.Controls.Add(linhaPercentual);
         conteudo.Controls.Add(CriarAjuda(
             "Sugerida ao lançar uma nova venda. Cada parcela guarda o seu próprio " +
             "percentual, então mudar aqui não altera o que já foi lançado."));
-        conteudo.Controls.Add(CriarTitulo("Importar da planilha do Excel", topo: 18));
-        conteudo.Controls.Add(CriarAjuda(
-            "Traz as linhas de uma aba da planilha de comissões (ex.: \"2026 (NOVA MILITAR)\"). " +
-            "As colunas são reconhecidas pelo cabeçalho — Nota fiscal, Nº b, Cliente, REF. Pedido, " +
-            "Valor NF, Vencimento, Nº de parcelas, Valor da parcela, Comissão, Status da comissão " +
-            "e pag. comissão — então as abas de outros anos também funcionam.\r\n\r\n" +
-            "• Uma prévia é mostrada antes de confirmar.\r\n" +
-            "• Parcelas que já existem (mesma NF, boleto, parcela, vencimento e valor) são " +
-            "puladas — dá para importar várias abas sem duplicar.\r\n" +
-            "• Só o formato .xlsx (no Excel: Salvar como → Pasta de Trabalho do Excel)."));
-        conteudo.Controls.Add(botaoImportar);
 
         var botaoSalvar = Estilo.BotaoPrimario("Salvar");
         botaoSalvar.Click += (_, _) => Salvar();
@@ -110,7 +111,7 @@ public class ComissoesConfigForm : Form
         Text = texto,
         ForeColor = Estilo.CorTextoSuave,
         AutoSize = true,
-        MaximumSize = new Size(560, 0),
+        MaximumSize = new Size(530, 0),
         Margin = new Padding(0, 0, 0, 4),
     };
 

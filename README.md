@@ -160,7 +160,7 @@ data em que a comissão foi paga.
 - **Marcar como pago** várias linhas de uma vez (Ctrl/Shift + clique),
   informando a data do pagamento; o rodapé mostra a **soma da comissão das
   linhas selecionadas**.
-- **Importar a planilha** (⚙ → *Selecionar planilha (.xlsx)*): escolha a aba,
+- **Importar a planilha** (⚙ → *Importar planilha (.xlsx)*, primeiro botão da janela): escolha a aba,
   confira a prévia e importe. Funciona com as abas de qualquer ano (as colunas
   são reconhecidas pelo cabeçalho) e **não duplica** parcelas que já existem —
   dá para importar 2026, 2025, 2024... em sequência.

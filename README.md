@@ -151,7 +151,9 @@ data em que a comissão foi paga.
   paga). Os totais acompanham o filtro: pesquisando um cliente, aparecem os
   totais dele.
 - **Pesquisa** (cliente, NF, boleto, pedido, valor, data) e filtros por **ano**
-  e **status**; ordenação por qualquer coluna clicando no cabeçalho.
+  e **status**. A tabela fica **sempre em ordem de vencimento**, da data mais
+  antiga para a mais recente (2025 → 2026) — ao lançar, editar ou importar, ela
+  se reorganiza sozinha e destaca as linhas novas no lugar certo.
 - **Nova venda**: informe cliente, NF, valor, nº de parcelas, 1º vencimento,
   intervalo (7/14/15/21/28/30 dias ou mensal) e o nº do 1º boleto — o programa
   gera todas as parcelas de uma vez (com prévia). O valor é dividido nos

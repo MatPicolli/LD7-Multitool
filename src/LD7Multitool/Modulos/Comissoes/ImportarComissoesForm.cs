@@ -187,6 +187,14 @@ public class ImportarComissoesForm : Form
             _candidatas.Add(new Candidata(linha.NumeroLinha, linha.Comissao, situacao));
         }
 
+        // Exibe por data de vencimento, como a tabela principal (a situação acima
+        // foi decidida na ordem da planilha); linhas com problema vão para o fim.
+        _candidatas = _candidatas
+            .OrderBy(c => c.Comissao is null)
+            .ThenBy(c => c.Comissao?.Vencimento)
+            .ThenBy(c => c.Linha)
+            .ToList();
+
         foreach (var candidata in _candidatas)
         {
             var c = candidata.Comissao;

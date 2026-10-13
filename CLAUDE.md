@@ -72,6 +72,10 @@ clientes/representantes e comissões). Não misture: módulo da loja vai em `Loj
 O módulo `Comissoes/` nasceu da planilha Excel "Comissão" do usuário (abas
 2023…2026). Ao mexer nele, preserve o comportamento que reproduz a planilha:
 
+- **Ordem: sempre por data de vencimento, crescente** (pedido do usuário), em
+  todas as telas e na impressão — o cabeçalho da grade **não** ordena. Ordene
+  pelo `DateTime`, nunca pelo texto "dd/MM/aaaa" (poria 01/05 antes de 02/04);
+  empate no mesmo dia pela ordem de lançamento (`Id`).
 - **Comissão = `ValorParcela × Percentual / 100`, sem arredondar por linha**
   (a planilha soma `=10%*K` cheio; arredondar linha a linha muda os totais).
   O `Percentual` fica **em cada linha** — mudar o padrão não reescreve o

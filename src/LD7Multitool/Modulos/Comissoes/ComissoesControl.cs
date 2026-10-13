@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Globalization;
 using LD7Multitool.Core;
 
@@ -176,30 +175,6 @@ public class ComissoesControl : UserControl
             if (e.KeyCode == Keys.Delete) Excluir();
         };
 
-        // Ordenação pelo valor real (data, número), não pelo texto exibido.
-        _grade.SortCompare += (_, e) =>
-        {
-            if (_grade.Rows[e.RowIndex1].Tag is not Comissao a || _grade.Rows[e.RowIndex2].Tag is not Comissao b)
-                return;
-            e.SortResult = e.Column.Name switch
-            {
-                "numero" => Numero(a).CompareTo(Numero(b)),
-                "nf" => CompararNumeroOuTexto(a.NotaFiscal, b.NotaFiscal),
-                "pedido" => CompararNumeroOuTexto(a.RefPedido, b.RefPedido),
-                "valorNf" => a.ValorNf.CompareTo(b.ValorNf),
-                "vencimento" => a.Vencimento.CompareTo(b.Vencimento),
-                "valorParcela" => a.ValorParcela.CompareTo(b.ValorParcela),
-                "comissao" => a.ValorComissao.CompareTo(b.ValorComissao),
-                "pagamento" => Nullable.Compare(a.DataPagamento, b.DataPagamento),
-                _ => string.Compare(Convert.ToString(e.CellValue1), Convert.ToString(e.CellValue2),
-                    StringComparison.CurrentCultureIgnoreCase),
-            };
-            // Empate: mantém a ordem da planilha.
-            if (e.SortResult == 0)
-                e.SortResult = Numero(a).CompareTo(Numero(b));
-            e.Handled = true;
-        };
-
         var menuContexto = new ContextMenuStrip();
         menuContexto.Items.Add("Editar", null, (_, _) => Editar());
         menuContexto.Items.Add("Marcar como pago...", null, (_, _) => MarcarPago());
@@ -302,7 +277,9 @@ public class ComissoesControl : UserControl
         var indice = _grade.Columns.Add(nome, titulo);
         var coluna = _grade.Columns[indice];
         coluna.FillWeight = peso;
-        coluna.SortMode = DataGridViewColumnSortMode.Automatic;
+        // A tabela fica SEMPRE em ordem de vencimento (mais antigo → mais recente),
+        // como a planilha; por isso o clique no cabeçalho não reordena.
+        coluna.SortMode = DataGridViewColumnSortMode.NotSortable;
         if (alinharDireita)
         {
             coluna.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
@@ -327,7 +304,13 @@ public class ComissoesControl : UserControl
     /// <summary>Recarrega do banco, reaplica os filtros e, opcionalmente, reseleciona linhas.</summary>
     private void Recarregar(IEnumerable<long>? selecionar = null)
     {
-        _todos = ComissaoRepository.Listar();
+        // Ordem por DATA de vencimento (não pelo texto "dd/MM/aaaa", que poria
+        // 01/05 antes de 02/04); no mesmo dia, a ordem em que foi lançada.
+        // Toda gravação passa por aqui, então uma venda nova já entra no lugar.
+        _todos = ComissaoRepository.Listar()
+            .OrderBy(c => c.Vencimento)
+            .ThenBy(c => c.Id)
+            .ToList();
         _numeroPorId = _todos.Select((c, i) => (c.Id, i + 1)).ToDictionary(p => p.Id, p => p.Item2);
         AtualizarAnos();
         AtualizarGrade();
@@ -422,13 +405,6 @@ public class ComissoesControl : UserControl
         }
         _grade.ResumeLayout();
 
-        // Repovoar a grade desfaz a ordenação escolhida no cabeçalho; reaplica.
-        if (_grade.SortedColumn is { } colunaOrdenada)
-        {
-            _grade.Sort(colunaOrdenada, _grade.SortOrder == SortOrder.Descending
-                ? ListSortDirection.Descending
-                : ListSortDirection.Ascending);
-        }
         _grade.ClearSelection();
 
         // Totais como na planilha (=SUM, =SUMIF "Pago"/"Não Pago"), só que
@@ -469,11 +445,6 @@ public class ComissoesControl : UserControl
         c.ValorParcela.ToString("0.00", CultureInfo.InvariantCulture),
         c.Vencimento.ToString("dd/MM/yyyy", CulturaBr),
         c.DataPagamento?.ToString("dd/MM/yyyy", CulturaBr) ?? ""));
-
-    private static int CompararNumeroOuTexto(string a, string b) =>
-        long.TryParse(a, out var na) && long.TryParse(b, out var nb)
-            ? na.CompareTo(nb)
-            : string.Compare(a, b, StringComparison.CurrentCultureIgnoreCase);
 
     private static string Moeda(decimal valor) => valor.ToString("C2", CulturaBr);
 

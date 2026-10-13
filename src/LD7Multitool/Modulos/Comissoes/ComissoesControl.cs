@@ -49,6 +49,7 @@ public class ComissoesControl : UserControl
         var botaoFechamento = Estilo.BotaoPrimario("Fechamento do mês");
         var botaoEditar = Estilo.BotaoPadrao("Editar");
         var botaoPago = Estilo.BotaoPadrao("Marcar como pago");
+        var botaoImprimir = Estilo.BotaoPadrao("Imprimir");
         var botaoExcluir = Estilo.BotaoPerigo("Excluir");
         var botaoConfig = Estilo.BotaoIcone("⚙", "Configurações (importar planilha, % padrão)");
 
@@ -56,6 +57,7 @@ public class ComissoesControl : UserControl
         botaoFechamento.Click += (_, _) => AbrirFechamento();
         botaoEditar.Click += (_, _) => Editar();
         botaoPago.Click += (_, _) => MarcarPago();
+        botaoImprimir.Click += (_, _) => Imprimir();
         botaoExcluir.Click += (_, _) => Excluir();
         botaoConfig.Click += (_, _) => AbrirConfiguracoes();
 
@@ -64,6 +66,7 @@ public class ComissoesControl : UserControl
         fluxoAcoes.Controls.Add(botaoFechamento);
         fluxoAcoes.Controls.Add(botaoEditar);
         fluxoAcoes.Controls.Add(botaoPago);
+        fluxoAcoes.Controls.Add(botaoImprimir);
         fluxoAcoes.Controls.Add(botaoExcluir);
 
         var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0, 2, 0, 2) };
@@ -545,6 +548,17 @@ public class ComissoesControl : UserControl
             return;
         ComissaoRepository.Excluir(selecionadas.Select(c => c.Id));
         Recarregar();
+    }
+
+    /// <summary>Imprime as linhas exibidas (filtros aplicados), na ordem do Nº, com linhas em branco no fim.</summary>
+    private void Imprimir()
+    {
+        var parcelas = _visiveis.OrderBy(Numero).ToList();
+        var titulo = _filtroAno.SelectedItem is string ano && ano != TodosOsAnos
+            ? $"NOVA MILITARI ({ano})"
+            : "NOVA MILITARI";
+        using var formulario = new ImprimirComissoesForm(parcelas, titulo);
+        formulario.ShowDialog(this);
     }
 
     private void AbrirFechamento()

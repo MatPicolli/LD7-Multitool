@@ -36,13 +36,7 @@ public static class FechamentoComissaoPdf
     /// <summary>Gera em Fechamentos_Comissao (ao lado do executável) e devolve o caminho.</summary>
     public static string Gerar(IReadOnlyList<Comissao> parcelas, DateTime de, DateTime ate)
     {
-        var pasta = Path.Combine(AppContext.BaseDirectory, "Fechamentos_Comissao");
-        Directory.CreateDirectory(pasta);
-        var nome = $"Comissão {de:yyyy-MM-dd} a {ate:yyyy-MM-dd}";
-        var caminho = Path.Combine(pasta, nome + ".pdf");
-        // Um PDF anterior aberto no leitor não pode ser sobrescrito: grava ao lado.
-        if (EmUso(caminho))
-            caminho = Path.Combine(pasta, $"{nome} ({DateTime.Now:HH-mm-ss}).pdf");
+        var caminho = PdfComum.Caminho("Fechamentos_Comissao", $"Comissão {de:yyyy-MM-dd} a {ate:yyyy-MM-dd}");
 
         using var documento = new PdfDocument();
         documento.Info.Title = $"Comissão MILITARI — {de:dd/MM/yyyy} a {ate:dd/MM/yyyy}";
@@ -53,7 +47,6 @@ public static class FechamentoComissaoPdf
         var fTexto = new XFont("Segoe UI", 8.5, XFontStyle.Regular);
         var fSoma = new XFont("Segoe UI", 10.5, XFontStyle.Bold);
         var fRodape = new XFont("Segoe UI", 7.5, XFontStyle.Italic);
-        var cinzaCabecalho = new XSolidBrush(XColor.FromArgb(102, 102, 102)); // igual ao cabeçalho da planilha
         var listra = new XSolidBrush(XColor.FromArgb(246, 247, 250));
         var linhaFina = new XPen(XColor.FromArgb(215, 218, 228), 0.5);
 
@@ -88,7 +81,7 @@ public static class FechamentoComissaoPdf
             var x = Margem;
             foreach (var coluna in Colunas)
             {
-                gfx.DrawRectangle(cinzaCabecalho, x, y, coluna.Largura, AlturaCabecalho);
+                gfx.DrawRectangle(PdfComum.CinzaCabecalho, x, y, coluna.Largura, AlturaCabecalho);
                 gfx.DrawString(coluna.Titulo, fCabecalho, XBrushes.White,
                     new XRect(x + 4, y, coluna.Largura - 8, AlturaCabecalho),
                     coluna.Direita ? XStringFormats.CenterRight : XStringFormats.CenterLeft);
@@ -113,7 +106,7 @@ public static class FechamentoComissaoPdf
             var x = Margem;
             foreach (var coluna in Colunas)
             {
-                var texto = Ajustar(gfx, coluna.Valor(parcelas[i]), fTexto, coluna.Largura - 8);
+                var texto = PdfComum.Ajustar(gfx, coluna.Valor(parcelas[i]), fTexto, coluna.Largura - 8);
                 gfx.DrawString(texto, fTexto, XBrushes.Black,
                     new XRect(x + 4, y, coluna.Largura - 8, AlturaLinha),
                     coluna.Direita ? XStringFormats.CenterRight : XStringFormats.CenterLeft);
@@ -139,30 +132,5 @@ public static class FechamentoComissaoPdf
         return caminho;
     }
 
-    private static string Moeda(decimal valor) => valor.ToString("C2", CulturaBr);
-
-    /// <summary>Corta o texto com "…" para caber na coluna (o PDF não corta sozinho).</summary>
-    private static string Ajustar(XGraphics gfx, string texto, XFont fonte, double largura)
-    {
-        if (gfx.MeasureString(texto, fonte).Width <= largura)
-            return texto;
-        while (texto.Length > 1 && gfx.MeasureString(texto + "…", fonte).Width > largura)
-            texto = texto[..^1];
-        return texto.TrimEnd() + "…";
-    }
-
-    private static bool EmUso(string caminho)
-    {
-        if (!File.Exists(caminho))
-            return false;
-        try
-        {
-            using var _ = new FileStream(caminho, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-            return false;
-        }
-        catch (IOException)
-        {
-            return true;
-        }
-    }
+    private static string Moeda(decimal valor) => PdfComum.Moeda(valor);
 }

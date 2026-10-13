@@ -162,6 +162,11 @@ data em que a comissão foi paga.
   parcela fica esperando o fechamento do mês (cartão **"A pagar no
   fechamento"**). O rodapé mostra a **soma da comissão das linhas
   selecionadas**.
+- **Imprimir**: gera um PDF da tabela no layout da planilha (A4 deitado, grade
+  pontilhada, mesmas colunas) com as linhas exibidas na tela e, depois delas,
+  **linhas numeradas em branco** para preencher à mão — você escolhe quantas, e a
+  última página é sempre completada. Fica em `Comissoes_Impressao`; o PDF abre
+  sozinho, é só imprimir (Ctrl+P).
 - **Fechamento do mês** (a tabela auxiliar à direita da aba da planilha): escolha
   o período de vencimento e aparecem as parcelas cuja comissão ainda não foi
   paga ao vendedor — marcadas as de status "Pago", desmarcadas as "Não pago"

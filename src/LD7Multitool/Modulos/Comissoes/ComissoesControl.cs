@@ -27,6 +27,7 @@ public class ComissoesControl : UserControl
     private readonly Label _valorPago;
     private readonly Label _valorFalta;
     private readonly Label _valorVencidas;
+    private readonly Label _valorFechamento;
     private readonly Label _resumo;
     private List<Comissao> _todos = new();
     private List<Comissao> _visiveis = new();
@@ -45,24 +46,24 @@ public class ComissoesControl : UserControl
         var barraSuperior = Estilo.CriarBarraSuperior();
 
         var botaoNova = Estilo.BotaoPrimario("+ Nova venda");
+        var botaoFechamento = Estilo.BotaoPrimario("Fechamento do mês");
         var botaoEditar = Estilo.BotaoPadrao("Editar");
         var botaoPago = Estilo.BotaoPadrao("Marcar como pago");
-        var botaoNaoPago = Estilo.BotaoPadrao("Marcar como não pago");
         var botaoExcluir = Estilo.BotaoPerigo("Excluir");
         var botaoConfig = Estilo.BotaoIcone("⚙", "Configurações (importar planilha, % padrão)");
 
         botaoNova.Click += (_, _) => NovaVenda();
+        botaoFechamento.Click += (_, _) => AbrirFechamento();
         botaoEditar.Click += (_, _) => Editar();
         botaoPago.Click += (_, _) => MarcarPago();
-        botaoNaoPago.Click += (_, _) => MarcarNaoPago();
         botaoExcluir.Click += (_, _) => Excluir();
         botaoConfig.Click += (_, _) => AbrirConfiguracoes();
 
         var fluxoAcoes = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, Padding = new Padding(0) };
         fluxoAcoes.Controls.Add(botaoNova);
+        fluxoAcoes.Controls.Add(botaoFechamento);
         fluxoAcoes.Controls.Add(botaoEditar);
         fluxoAcoes.Controls.Add(botaoPago);
-        fluxoAcoes.Controls.Add(botaoNaoPago);
         fluxoAcoes.Controls.Add(botaoExcluir);
 
         var painelEngrenagem = new Panel { Dock = DockStyle.Right, Width = 40, Padding = new Padding(0, 2, 0, 2) };
@@ -119,18 +120,20 @@ public class ComissoesControl : UserControl
         {
             Dock = DockStyle.Top,
             Height = 78,
-            ColumnCount = 4,
+            ColumnCount = 5,
             RowCount = 1,
             Padding = new Padding(12, 10, 12, 6),
             BackColor = Estilo.CorFundo,
         };
-        for (var i = 0; i < 4; i++)
-            painelCartoes.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        for (var i = 0; i < 5; i++)
+            painelCartoes.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
         painelCartoes.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         _valorTotal = CriarCartao(painelCartoes, 0, "Comissão total", Estilo.CorTexto);
         _valorPago = CriarCartao(painelCartoes, 1, "Pago", Estilo.CorSucesso);
-        _valorFalta = CriarCartao(painelCartoes, 2, "Falta pagar", Estilo.CorPrimaria);
+        _valorFalta = CriarCartao(painelCartoes, 2, "Falta pagar", Estilo.CorTexto);
         _valorVencidas = CriarCartao(painelCartoes, 3, "Vencidas não pagas", Estilo.CorPerigo);
+        // "Pago" ainda sem data de pagamento da comissão = vai no próximo fechamento.
+        _valorFechamento = CriarCartao(painelCartoes, 4, "A pagar no fechamento", Estilo.CorPrimaria);
 
         // --- Grade -----------------------------------------------------------
         _grade = new DataGridView
@@ -433,6 +436,7 @@ public class ComissoesControl : UserControl
         _valorPago.Text = Moeda(pago);
         _valorFalta.Text = Moeda(total - pago);
         _valorVencidas.Text = Moeda(_visiveis.Where(c => c.VencidaNaoPaga).Sum(c => c.ValorComissao));
+        _valorFechamento.Text = Moeda(_visiveis.Where(c => c.Paga && c.DataPagamento is null).Sum(c => c.ValorComissao));
 
         AtualizarResumo();
     }
@@ -497,7 +501,8 @@ public class ComissoesControl : UserControl
         var selecionadas = Selecionadas;
         if (selecionadas.Count == 0)
             return;
-        using var formulario = new DataPagamentoForm(selecionadas);
+        // Data opcional: sem ela, as parcelas ficam esperando o fechamento do mês.
+        using var formulario = new DataPagamentoForm(selecionadas, dataObrigatoria: false);
         if (formulario.ShowDialog(this) != DialogResult.OK)
             return;
         var ids = selecionadas.Select(c => c.Id).ToList();
@@ -540,6 +545,14 @@ public class ComissoesControl : UserControl
             return;
         ComissaoRepository.Excluir(selecionadas.Select(c => c.Id));
         Recarregar();
+    }
+
+    private void AbrirFechamento()
+    {
+        using var formulario = new FechamentoComissaoForm();
+        formulario.ShowDialog(this);
+        if (formulario.HouveAlteracao)
+            Recarregar();
     }
 
     private void AbrirConfiguracoes()

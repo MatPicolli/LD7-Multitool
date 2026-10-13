@@ -157,9 +157,19 @@ data em que a comissão foi paga.
   gera todas as parcelas de uma vez (com prévia). O valor é dividido nos
   centavos e a última parcela leva a diferença; boletos no formato `364-6`
   seguem em sequência (`364-7`, …, `365-0`).
-- **Marcar como pago** várias linhas de uma vez (Ctrl/Shift + clique),
-  informando a data do pagamento; o rodapé mostra a **soma da comissão das
-  linhas selecionadas**.
+- **Marcar como pago** várias linhas de uma vez (Ctrl/Shift + clique) quando
+  o cliente paga; a data do pagamento da comissão é opcional — sem ela, a
+  parcela fica esperando o fechamento do mês (cartão **"A pagar no
+  fechamento"**). O rodapé mostra a **soma da comissão das linhas
+  selecionadas**.
+- **Fechamento do mês** (a tabela auxiliar à direita da aba da planilha): escolha
+  o período de vencimento e aparecem as parcelas cuja comissão ainda não foi
+  paga ao vendedor — marcadas as de status "Pago", desmarcadas as "Não pago"
+  (cliente ainda não pagou; marque se for pagar também). Mostra a **SOMA**, gera
+  um **PDF** com a tabela para o vendedor (em `Fechamentos_Comissao`, ao lado do
+  executável), **copia a tabela** para colar no Excel/WhatsApp e **registra o
+  pagamento** (preenche a data em "pag. comissão"). O período já vem sugerido:
+  do dia seguinte ao último vencimento acertado até hoje.
 - **Importar a planilha** (⚙ → *Importar planilha (.xlsx)*, primeiro botão da janela): escolha a aba,
   confira a prévia e importe. Funciona com as abas de qualquer ano (as colunas
   são reconhecidas pelo cabeçalho) e **não duplica** parcelas que já existem —

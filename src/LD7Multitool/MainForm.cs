@@ -55,13 +55,53 @@ public class MainForm : Form
         };
         _menuLateral.Controls.Add(titulo);
 
-        var modulos = DescobrirModulos();
-        foreach (var modulo in modulos)
-            _menuLateral.Controls.Add(CriarBotaoModulo(modulo));
+        // Módulos agrupados por categoria, cada grupo com um cabeçalho. Os
+        // grupos seguem a menor Ordem dos seus módulos (assim "Lojão da 7",
+        // que tem o módulo 1, vem antes de "MILITARI"); dentro do grupo vale a
+        // Ordem de cada módulo (o GroupBy preserva a ordenação de DescobrirModulos).
+        IModulo? primeiroModulo = null;
+        Button? primeiroBotao = null;
+        var grupos = DescobrirModulos()
+            .GroupBy(m => m.Categoria)
+            .OrderBy(g => g.Min(m => m.Ordem))
+            .ThenBy(g => g.Key);
 
-        if (modulos.Count > 0)
-            AbrirModulo(modulos[0], (Button)_menuLateral.Controls[1]);
+        var primeiroGrupo = true;
+        foreach (var grupo in grupos)
+        {
+            _menuLateral.Controls.Add(CriarCabecalhoCategoria(grupo.Key, primeiroGrupo));
+            primeiroGrupo = false;
+
+            foreach (var modulo in grupo)
+            {
+                var botao = CriarBotaoModulo(modulo);
+                _menuLateral.Controls.Add(botao);
+                if (primeiroBotao is null)
+                {
+                    primeiroModulo = modulo;
+                    primeiroBotao = botao;
+                }
+            }
+        }
+
+        if (primeiroModulo is not null && primeiroBotao is not null)
+            AbrirModulo(primeiroModulo, primeiroBotao);
     }
+
+    /// <summary>Rótulo discreto que separa os grupos do menu (ex.: "LOJÃO DA 7").</summary>
+    private static Label CriarCabecalhoCategoria(string categoria, bool primeiro) => new()
+    {
+        Text = categoria.ToUpperInvariant(),
+        ForeColor = Estilo.CorMenuCategoria,
+        Font = Estilo.FonteCategoriaMenu,
+        AutoSize = false,
+        Width = 186,
+        Height = 24,
+        TextAlign = ContentAlignment.BottomLeft,
+        Padding = new Padding(8, 0, 0, 2),
+        // Espaço extra acima de cada grupo, menos do primeiro (já fica sob o título).
+        Margin = new Padding(0, primeiro ? 0 : 14, 0, 4),
+    };
 
     private static List<IModulo> DescobrirModulos()
     {

@@ -6,5 +6,6 @@ public class ClientesModulo : IModulo
 {
     public string Nome => "Clientes";
     public int Ordem => 3;
+    public string Categoria => Categorias.Militari;
     public Control CriarControle() => new ClientesControl();
 }

@@ -18,11 +18,14 @@ public static class Estilo
     public static readonly Color CorMenu = Color.FromArgb(30, 32, 44);
     public static readonly Color CorMenuHover = Color.FromArgb(48, 51, 70);
     public static readonly Color CorMenuAtivo = CorPrimaria;
+    /// <summary>Texto do cabeçalho de categoria no menu (ex.: "LOJÃO DA 7").</summary>
+    public static readonly Color CorMenuCategoria = Color.FromArgb(128, 134, 156);
     public static readonly Color CorSelecao = Color.FromArgb(226, 233, 255);
 
     public static readonly Font FontePadrao = new("Segoe UI", 9.75f);
     public static readonly Font FonteTitulo = new("Segoe UI Semibold", 12f);
     public static readonly Font FonteCabecalhoGrade = new("Segoe UI Semibold", 9.75f);
+    public static readonly Font FonteCategoriaMenu = new("Segoe UI Semibold", 8.25f);
 
     /// <summary>Altura única de todos os botões de barra — evita corte de texto.</summary>
     public const int AlturaBotao = 34;

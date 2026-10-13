@@ -13,6 +13,9 @@ public interface IModulo
     /// <summary>Posição no menu lateral (menor aparece primeiro).</summary>
     int Ordem { get; }
 
+    /// <summary>Grupo do menu lateral onde o módulo aparece (ver <see cref="Categorias"/>).</summary>
+    string Categoria { get; }
+
     /// <summary>Cria o controle com a interface do módulo (chamado uma única vez).</summary>
     Control CriarControle();
 }

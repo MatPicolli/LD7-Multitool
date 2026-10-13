@@ -33,25 +33,33 @@ public interface IModulo
 {
     string Nome { get; }          // rótulo no menu lateral
     int Ordem { get; }            // posição no menu (1, 2, 3, ...)
+    string Categoria { get; }     // grupo do menu: Categorias.LojaoDa7 ou Categorias.Militari
     Control CriarControle();      // o UserControl/Control do módulo
 }
 ```
 
-`MainForm` varre o assembly, instancia todos os `IModulo`, ordena por `Ordem` e
-monta o menu. **Para adicionar um módulo:** crie uma pasta em
-`src/LD7Multitool/Modulos/<NomeDoModulo>/`, um `UserControl` com a tela, e a
-classe `IModulo`. Se precisar de tabelas, adicione o `CREATE TABLE IF NOT
-EXISTS ...` em `Core/Database.cs` (ver abaixo). Nada mais.
+`MainForm` varre o assembly, instancia todos os `IModulo`, **agrupa por
+`Categoria`** (um cabeçalho por grupo; os grupos seguem a menor `Ordem` dos seus
+módulos) e, dentro do grupo, ordena por `Ordem`. **Para adicionar um módulo:**
+crie uma pasta em `src/LD7Multitool/Modulos/<NomeDoModulo>/`, um `UserControl`
+com a tela, e a classe `IModulo` — com a `Categoria` vinda de
+`Core/Categorias.cs` (nunca string solta; um erro de digitação criaria um grupo
+novo). Se precisar de tabelas, adicione o `CREATE TABLE IF NOT EXISTS ...` em
+`Core/Database.cs` (ver abaixo). Nada mais.
+
+O menu é dividido em duas categorias, porque o programa atende **dois
+negócios** do usuário: **Lojão da 7** (a loja) e **MILITARI** (só o cadastro de
+clientes/representantes). Não misture: módulo da loja vai em `LojaoDa7`.
 
 ### Módulos atuais
 
-| Ordem | Pasta        | O que faz |
-|-------|--------------|-----------|
-| 1     | `AutoEmail/` | Cadastro de clientes/e-mails e envio por SMTP com anexos (NF-e / NF-e+Boleto / Outro), modelos editáveis, histórico de envios. |
-| 2     | `Boletos/`   | CRUD de boletos com estados (Aberto/Pago/Cancelado/Protestado), importação de PDF (linha digitável FEBRABAN), vínculo automático de NF-e por número, alerta de vencimento com envio por e-mail. |
-| 3     | `Clientes/`  | Cadastro estilo ERP (reescrita do antigo "MILITARISYS"), Pessoa Física/Jurídica, busca de CEP (ViaCEP) e de CNPJ (BrasilAPI/ReceitaWS), importação de CSV, ficha em PDF, cadastro de representantes. |
-| 4     | `Despesas/`  | Despesas fixas da loja (água, luz, telefone, cartões...): catálogo dos itens com portal/credenciais, histórico de contas por item e **coleta automática** da última conta por pasta de downloads, e-mail (IMAP) ou consulta HTTP ao portal. |
-| 5     | `NotasEntrada/` | Organiza fotos de notas fiscais de entrada: galeria de miniaturas da pasta "para separar", seleção com ordem de página (clique = próxima página), visualizador com zoom/pan (botão direito abre/fecha) e separação para `Empresa/aaaa/dd-MM-aaaa(.jpg ou pasta com 01.jpg, 02.jpg...)`. Página nova de uma nota já separada vira a próxima numeração em vez de travar. |
+| Ordem | Categoria | Pasta        | O que faz |
+|-------|-----------|--------------|-----------|
+| 1     | Lojão da 7 | `AutoEmail/` | Cadastro de clientes/e-mails e envio por SMTP com anexos (NF-e / NF-e+Boleto / Outro), modelos editáveis, histórico de envios. |
+| 2     | Lojão da 7 | `Boletos/`   | CRUD de boletos com estados (Aberto/Pago/Cancelado/Protestado), importação de PDF (linha digitável FEBRABAN), vínculo automático de NF-e por número, alerta de vencimento com envio por e-mail. |
+| 3     | MILITARI | `Clientes/`  | Cadastro estilo ERP (reescrita do antigo "MILITARISYS"), Pessoa Física/Jurídica, busca de CEP (ViaCEP) e de CNPJ (BrasilAPI/ReceitaWS), importação de CSV, ficha em PDF, cadastro de representantes. |
+| 4     | Lojão da 7 | `Despesas/`  | Despesas fixas da loja (água, luz, telefone, cartões...): catálogo dos itens com portal/credenciais, histórico de contas por item e **coleta automática** da última conta por pasta de downloads, e-mail (IMAP) ou consulta HTTP ao portal. |
+| 5     | Lojão da 7 | `NotasEntrada/` | Organiza fotos de notas fiscais de entrada: galeria de miniaturas da pasta "para separar", seleção com ordem de página (clique = próxima página), visualizador com zoom/pan (botão direito abre/fecha) e separação para `Empresa/aaaa/dd-MM-aaaa(.jpg ou pasta com 01.jpg, 02.jpg...)`. Página nova de uma nota já separada vira a próxima numeração em vez de travar. |
 
 > Já existiu um módulo **Consulta NF-e/CT-e** (SEFAZ com certificado A1). Foi
 > **removido a pedido do usuário** por não funcionar bem. **Não reintroduza**

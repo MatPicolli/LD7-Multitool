@@ -269,13 +269,17 @@ namespace LD7Multitool.Modulos.MeuModulo;
 
 public class MeuModulo : IModulo
 {
-    public string Nome => "Meu módulo";      // nome no menu lateral
-    public int Ordem => 3;                   // posição no menu
+    public string Nome => "Meu módulo";              // nome no menu lateral
+    public int Ordem => 3;                           // posição no menu
+    public string Categoria => Categorias.LojaoDa7;  // grupo: LojaoDa7 ou Militari
     public Control CriarControle() => new MeuModuloControl();
 }
 ```
 
-Pronto — na próxima execução o módulo aparece no menu lateral. Se precisar de
+Pronto — na próxima execução o módulo aparece no menu lateral, dentro do grupo
+da sua categoria. O menu é dividido em **Lojão da 7** (Auto-Email, Boletos,
+Despesas, Notas de Entrada) e **MILITARI** (Clientes); as categorias ficam em
+`Core/Categorias.cs`. Se precisar de
 tabelas próprias, adicione o `CREATE TABLE IF NOT EXISTS ...` em
 `Core/Database.cs`.
 
@@ -287,6 +291,7 @@ src/LD7Multitool/
 ├── MainForm.cs                 # janela principal + menu lateral
 ├── Core/
 │   ├── IModulo.cs              # contrato dos módulos
+│   ├── Categorias.cs           # grupos do menu (Lojão da 7 / MILITARI)
 │   ├── Database.cs             # SQLite + criação do esquema
 │   ├── Segredo.cs              # cifra as senhas gravadas no banco (DPAPI)
 │   └── ConfiguracaoRepository.cs

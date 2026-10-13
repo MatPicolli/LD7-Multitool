@@ -17,10 +17,11 @@ independente. Interface **inteiramente em português** (código, UI e mensagens)
   mesma pasta do executável** — o programa é **portátil**. Bancos antigos em
   `%AppData%\LD7Multitool` são migrados na primeira execução.
 - **Alvo:** roda **só no Windows**. Este repositório costuma ser editado num
-  sandbox Linux **sem** SDK .NET nem Windows Forms — **não dá para compilar,
-  rodar nem renderizar a UI aqui**. Valide a lógica por leitura (e por
-  simulação em Python/regex quando fizer sentido) e seja honesto com o usuário
-  sobre isso. Quem compila e testa é o usuário, na máquina Windows dele.
+  sandbox Linux, onde **não dá para rodar nem ver a UI** (WinForms não existe
+  no Linux) — mas **dá para compilar** e para **executar a lógica sem tela**
+  (ver "Compilar e testar no sandbox Linux" abaixo). Faça isso antes de
+  entregar; o que depende de tela (layout, cliques) continua sendo validado por
+  leitura e pelo usuário, na máquina Windows dele — seja honesto sobre isso.
 
 ## Arquitetura modular (o ponto central)
 
@@ -48,8 +49,8 @@ novo). Se precisar de tabelas, adicione o `CREATE TABLE IF NOT EXISTS ...` em
 `Core/Database.cs` (ver abaixo). Nada mais.
 
 O menu é dividido em duas categorias, porque o programa atende **dois
-negócios** do usuário: **Lojão da 7** (a loja) e **MILITARI** (só o cadastro de
-clientes/representantes). Não misture: módulo da loja vai em `LojaoDa7`.
+negócios** do usuário: **Lojão da 7** (a loja) e **MILITARI** (cadastro de
+clientes/representantes e comissões). Não misture: módulo da loja vai em `LojaoDa7`.
 
 ### Módulos atuais
 
@@ -60,10 +61,35 @@ clientes/representantes). Não misture: módulo da loja vai em `LojaoDa7`.
 | 3     | MILITARI | `Clientes/`  | Cadastro estilo ERP (reescrita do antigo "MILITARISYS"), Pessoa Física/Jurídica, busca de CEP (ViaCEP) e de CNPJ (BrasilAPI/ReceitaWS), importação de CSV, ficha em PDF, cadastro de representantes. |
 | 4     | Lojão da 7 | `Despesas/`  | Despesas fixas da loja (água, luz, telefone, cartões...): catálogo dos itens com portal/credenciais, histórico de contas por item e **coleta automática** da última conta por pasta de downloads, e-mail (IMAP) ou consulta HTTP ao portal. |
 | 5     | Lojão da 7 | `NotasEntrada/` | Organiza fotos de notas fiscais de entrada: galeria de miniaturas da pasta "para separar", seleção com ordem de página (clique = próxima página), visualizador com zoom/pan (botão direito abre/fecha) e separação para `Empresa/aaaa/dd-MM-aaaa(.jpg ou pasta com 01.jpg, 02.jpg...)`. Página nova de uma nota já separada vira a próxima numeração em vez de travar. |
+| 6     | MILITARI | `Comissoes/` | Comissões da MILITARI — equivalente à aba "2026 (NOVA MILITAR)" da planilha "Comissão": uma linha **por parcela** (NF, Nº boleto, cliente, ref. pedido, valor NF, vencimento, parcela, valor da parcela, comissão = % × parcela, status pago/não pago, data do pagamento), totais (total / pago / falta pagar / vencidas), "Nova venda" que gera as N parcelas e importação da planilha .xlsx. |
 
 > Já existiu um módulo **Consulta NF-e/CT-e** (SEFAZ com certificado A1). Foi
 > **removido a pedido do usuário** por não funcionar bem. **Não reintroduza**
 > sem ele pedir explicitamente.
+
+### Comissões e a planilha do usuário
+
+O módulo `Comissoes/` nasceu da planilha Excel "Comissão" do usuário (abas
+2023…2026). Ao mexer nele, preserve o comportamento que reproduz a planilha:
+
+- **Comissão = `ValorParcela × Percentual / 100`, sem arredondar por linha**
+  (a planilha soma `=10%*K` cheio; arredondar linha a linha muda os totais).
+  O `Percentual` fica **em cada linha** — mudar o padrão não reescreve o
+  histórico.
+- **Divisão das parcelas** (`GeradorParcelas.DividirValor`): trunca nos
+  centavos e a última leva a diferença (17.230,40 / 13 → 12 × 1.325,41 +
+  1.325,48) — é o que os boletos reais da planilha mostram.
+- **Boleto "364-6"** segue em sequência (364-7 … 364-9, 365-0); outro texto
+  (PIX) se repete.
+- **Importação** (`PlanilhaComissoes`): colunas achadas pelo **texto do
+  cabeçalho**, escolhendo a linha com mais títulos reconhecidos (a aba 2026 tem
+  um cabeçalho parcial de uma tabela auxiliar uma linha acima). O Excel
+  converteu parcelas como "1/5" em **data** (exibida "01/05"): dia/mês da data
+  = parcela/total. Duplicidade evitada por `Comissao.ChaveImportacao` (NF +
+  boleto + parcela + vencimento + valor) — há parcelas repetidas entre abas.
+  Validado contra a planilha real: a aba 2026 bate os totais do Excel
+  (11.350,18 / 8.736,02 / 2.614,16). **Não versione a planilha** (dados de
+  clientes) nem a use como seed.
 
 ### Coleta de despesas (ponto de extensão)
 
@@ -112,6 +138,12 @@ própria linha digitável. **Não gere chave vazia.**
   arquivo e **sem o prefixo `dpapi:`**. Não troque uma pela outra sem migrar —
   `Revelar` devolveria o base64 cru como se fosse a senha.
 - **`IModulo.cs`** — o contrato descrito acima.
+- **`Categorias.cs`** — as constantes de categoria do menu (`LojaoDa7`, `Militari`).
+- **`LeitorXlsx.cs`** — leitor mínimo de planilha **.xlsx** sem pacote externo
+  (zip + XML do Office Open XML). Devolve só os **valores** das células (o
+  resultado gravado das fórmulas, sem estilos): **datas chegam como número
+  serial** — use `CelulaXlsx.ComoData()`; `ComoDecimal()`/`ComoTexto()` para o
+  resto. Abre o arquivo mesmo aberto no Excel. Não lê o formato antigo `.xls`.
 
 ## Convenções de código
 
@@ -183,9 +215,28 @@ dotnet run --project src/LD7Multitool          # rodar
 dotnet publish src/LD7Multitool -c Release -o out   # gerar executável
 ```
 
+## Compilar e testar no sandbox Linux
+
+O SDK não vem instalado e o `dot.net`/`builds.dotnet.microsoft.com` costumam
+estar bloqueados pelo proxy, mas o **repositório do Ubuntu** tem o .NET 10:
+
+```bash
+apt-get update && apt-get install -y dotnet-sdk-10.0
+dotnet build src/LD7Multitool -p:EnableWindowsTargeting=true   # compila (não roda)
+```
+
+`EnableWindowsTargeting` deixa compilar um projeto `net10.0-windows` no Linux;
+pega erro de compilação e aviso de nulidade antes do usuário. Para **testar
+lógica** (leitura de PDF/planilha, cálculos, repositórios com SQLite), crie um
+console `net10.0` **fora do repositório** (scratchpad) que inclua os `.cs`
+necessários com `<Compile Include="...">` — só funciona com arquivos que não
+usam WinForms — e rode contra dados reais. Não versione o projeto de teste nem
+o `dados.db` que ele gera.
+
 ## Dica de trabalho
 
-Como não é possível testar aqui, **descreva claramente ao usuário o que mudou e
-peça para ele rodar/testar**, principalmente em: parsing de PDF, chamadas de
-rede (CEP/CNPJ) e ajustes visuais de WinForms. Prefira mudanças pequenas e
-verificáveis a grandes refatorações não testadas.
+O que não dá para testar aqui (tela, cliques, layout, rede para fora do proxy):
+**descreva claramente ao usuário o que mudou e peça para ele rodar/testar**,
+principalmente parsing de PDF, chamadas de rede (CEP/CNPJ) e ajustes visuais de
+WinForms. Prefira mudanças pequenas e verificáveis a grandes refatorações não
+testadas.

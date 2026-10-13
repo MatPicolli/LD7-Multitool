@@ -12,6 +12,8 @@ public static class Estilo
     public static readonly Color CorPrimaria = Color.FromArgb(59, 91, 219);
     public static readonly Color CorPrimariaHover = Color.FromArgb(47, 74, 183);
     public static readonly Color CorPerigo = Color.FromArgb(196, 61, 61);
+    /// <summary>Verde de "pago" (o mesmo dos boletos pagos).</summary>
+    public static readonly Color CorSucesso = Color.FromArgb(30, 130, 76);
     public static readonly Color CorTexto = Color.FromArgb(35, 38, 46);
     public static readonly Color CorTextoSuave = Color.FromArgb(110, 115, 130);
     public static readonly Color CorBorda = Color.FromArgb(215, 218, 228);
@@ -168,7 +170,7 @@ public static class Estilo
         {
             using var caneta = new Pen(CorBorda);
             var x = e.CellBounds.Right - 1;
-            e.Graphics.DrawLine(caneta, x, e.CellBounds.Top + 8, x, e.CellBounds.Bottom - 8);
+            e.Graphics!.DrawLine(caneta, x, e.CellBounds.Top + 8, x, e.CellBounds.Bottom - 8);
         }
 
         e.Handled = true;

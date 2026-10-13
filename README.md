@@ -139,6 +139,34 @@ já existente são pulados (nunca sobrescreve), código em branco gera um novo
 automaticamente, e representantes citados pelo nome que ainda não existem são
 criados na hora (só com o nome — complete os dados depois).
 
+### 💰 Comissões (MILITARI)
+A planilha **"Comissão"** dentro do programa — a mesma tabela da aba
+"2026 (NOVA MILITAR)": **uma linha por parcela** com nota fiscal, nº do boleto,
+cliente, ref. do pedido, valor da NF, vencimento, parcela (01/13, UNICA...),
+valor da parcela, **comissão** (10% da parcela), status (Pago / Não pago) e a
+data em que a comissão foi paga.
+
+- **Cartões com os totais**, como na planilha: comissão total, pago, falta
+  pagar — e as **vencidas não pagas** (parcela já venceu e a comissão não foi
+  paga). Os totais acompanham o filtro: pesquisando um cliente, aparecem os
+  totais dele.
+- **Pesquisa** (cliente, NF, boleto, pedido, valor, data) e filtros por **ano**
+  e **status**; ordenação por qualquer coluna clicando no cabeçalho.
+- **Nova venda**: informe cliente, NF, valor, nº de parcelas, 1º vencimento,
+  intervalo (7/14/15/21/28/30 dias ou mensal) e o nº do 1º boleto — o programa
+  gera todas as parcelas de uma vez (com prévia). O valor é dividido nos
+  centavos e a última parcela leva a diferença; boletos no formato `364-6`
+  seguem em sequência (`364-7`, …, `365-0`).
+- **Marcar como pago** várias linhas de uma vez (Ctrl/Shift + clique),
+  informando a data do pagamento; o rodapé mostra a **soma da comissão das
+  linhas selecionadas**.
+- **Importar a planilha** (⚙ → *Selecionar planilha (.xlsx)*): escolha a aba,
+  confira a prévia e importe. Funciona com as abas de qualquer ano (as colunas
+  são reconhecidas pelo cabeçalho) e **não duplica** parcelas que já existem —
+  dá para importar 2026, 2025, 2024... em sequência.
+- O **percentual padrão** (10%) fica na ⚙; cada parcela guarda o seu, então
+  mudar o padrão não altera o que já foi lançado.
+
 ### 💡 Despesas
 Controle das **despesas fixas da loja** (água, luz, telefone, internet,
 condomínio, cartões, impostos): para cada item, onde buscar a conta, com quais
@@ -278,7 +306,7 @@ public class MeuModulo : IModulo
 
 Pronto — na próxima execução o módulo aparece no menu lateral, dentro do grupo
 da sua categoria. O menu é dividido em **Lojão da 7** (Auto-Email, Boletos,
-Despesas, Notas de Entrada) e **MILITARI** (Clientes); as categorias ficam em
+Despesas, Notas de Entrada) e **MILITARI** (Clientes, Comissões); as categorias ficam em
 `Core/Categorias.cs`. Se precisar de
 tabelas próprias, adicione o `CREATE TABLE IF NOT EXISTS ...` em
 `Core/Database.cs`.
@@ -293,12 +321,14 @@ src/LD7Multitool/
 │   ├── IModulo.cs              # contrato dos módulos
 │   ├── Categorias.cs           # grupos do menu (Lojão da 7 / MILITARI)
 │   ├── Database.cs             # SQLite + criação do esquema
+│   ├── LeitorXlsx.cs           # lê planilhas .xlsx (importação de comissões)
 │   ├── Segredo.cs              # cifra as senhas gravadas no banco (DPAPI)
 │   └── ConfiguracaoRepository.cs
 └── Modulos/
     ├── AutoEmail/              # módulo de envio de e-mails
     ├── Boletos/                # módulo gerenciador de boletos
     ├── Clientes/               # módulo de cadastro de clientes
+    ├── Comissoes/              # comissões MILITARI (planilha "Comissão")
     ├── Despesas/               # módulo das despesas fixas da loja
     └── NotasEntrada/           # organiza fotos de notas fiscais de entrada
 ```

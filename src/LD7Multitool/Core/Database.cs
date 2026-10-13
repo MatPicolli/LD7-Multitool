@@ -160,6 +160,23 @@ public static class Database
             -- boleto duas vezes (ela nunca fica vazia — ver LancamentoDespesaRepository).
             CREATE UNIQUE INDEX IF NOT EXISTS ix_despesas_lancamentos_chave
                 ON despesas_lancamentos(despesa_id, chave_origem);
+
+            -- Comissões MILITARI: uma linha por parcela de venda (como na
+            -- planilha "Comissão"). Valores em texto invariante, datas ISO.
+            CREATE TABLE IF NOT EXISTS comissoes (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                nota_fiscal    TEXT NOT NULL DEFAULT '',
+                numero_boleto  TEXT NOT NULL DEFAULT '',
+                cliente        TEXT NOT NULL DEFAULT '',
+                ref_pedido     TEXT NOT NULL DEFAULT '',
+                valor_nf       TEXT NOT NULL DEFAULT '0',
+                vencimento     TEXT NOT NULL,
+                parcela        TEXT NOT NULL DEFAULT '',
+                valor_parcela  TEXT NOT NULL DEFAULT '0',
+                percentual     TEXT NOT NULL DEFAULT '10',
+                paga           INTEGER NOT NULL DEFAULT 0,
+                data_pagamento TEXT NOT NULL DEFAULT ''
+            );
             """;
         comando.ExecuteNonQuery();
 
